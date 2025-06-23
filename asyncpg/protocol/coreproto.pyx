@@ -6,9 +6,18 @@
 
 
 import hashlib
-
-
+import hmac
+from hashlib import pbkdf2_hmac
 include "scram.pyx"
+
+
+# 添加SHA256认证相关常量
+AUTH_REQUIRED_SHA256 = 13  # GaussDB SHA256认证类型
+
+# Password storage methods (from Go code)
+PLAIN_PASSWORD = 0
+SHA256_PASSWORD = 2
+MD5_PASSWORD = 1
 
 
 cdef dict AUTH_METHOD_NAME = {
@@ -18,8 +27,229 @@ cdef dict AUTH_METHOD_NAME = {
     AUTH_REQUIRED_GSS: 'gss',
     AUTH_REQUIRED_SASL: 'scram-sha-256',
     AUTH_REQUIRED_SSPI: 'sspi',
+    AUTH_REQUIRED_SHA256: 'sha256',  # 添加SHA256
 }
 
+
+def hex_string_to_bytes(hex_string):
+    """
+    将hex字符串转换为bytes，对应Go的hexStringToBytes函数
+    """
+    if not hex_string:
+        return b''
+    
+    upper_string = hex_string.upper()
+    bytes_len = len(upper_string) // 2
+    result = bytearray(bytes_len)
+    
+    for i in range(bytes_len):
+        pos = i * 2
+        high_char = upper_string[pos]
+        low_char = upper_string[pos + 1]
+        
+        # 将字符转换为数值
+        high_val = "0123456789ABCDEF".index(high_char)
+        low_val = "0123456789ABCDEF".index(low_char)
+        
+        result[i] = (high_val << 4) | low_val
+    
+    return bytes(result)
+
+def generate_k_from_pbkdf2(password, random64code, server_iteration):
+    """
+    对应Go的generateKFromPBKDF2函数
+    注意：Go代码使用的是SHA1，不是SHA256
+    """
+    random32code = hex_string_to_bytes(random64code)
+    # Go代码使用sha1.New，所以这里使用'sha1'
+    pwd_encoded = pbkdf2_hmac('sha1', password.encode('utf-8'), random32code, server_iteration, 32)
+    return pwd_encoded
+
+def bytes_to_hex_string(src):
+    """
+    对应Go的bytesToHexString函数
+    """
+    s = ""
+    for byte_val in src:
+        v = byte_val & 0xFF
+        hv = format(v, 'x')
+        if len(hv) < 2:
+            s += "0" + hv
+        else:
+            s += hv
+    return s
+
+def get_key_from_hmac(key, data):
+    """
+    对应Go的getKeyFromHmac函数，使用SHA256
+    """
+    h = hmac.new(key, data, hashlib.sha256)
+    return h.digest()
+
+def get_sha256(message):
+    """
+    对应Go的getSha256函数
+    """
+    hash_obj = hashlib.sha256()
+    hash_obj.update(message)
+    return hash_obj.digest()
+
+def get_sm3(message):
+    """
+    对应Go的getSm3函数 (这里用SHA256代替，因为Python标准库没有SM3)
+    实际项目中需要安装gmssl库来支持SM3
+    """
+    # 注意：这里用SHA256代替SM3，实际使用时需要proper的SM3实现
+    hash_obj = hashlib.sha256()  # 临时用SHA256代替
+    hash_obj.update(message)
+    return hash_obj.digest()
+
+def xor_between_password(password1, password2, length):
+    """
+    对应Go的XorBetweenPassword函数
+    """
+    result = bytearray(length)
+    for i in range(length):
+        result[i] = password1[i] ^ password2[i]
+    return bytes(result)
+
+def bytes_to_hex(source_bytes, result_array=None, start_pos=0, length=None):
+    """
+    对应Go的bytesToHex函数，支持Java风格的4参数调用
+    但Go代码只传1个参数，所以做兼容处理
+    """
+    if result_array is not None:
+        # Java风格：4个参数 bytesToHex(hValue, result, 0, hValue.length)
+        if length is None:
+            length = len(source_bytes)
+        
+        lookup = b'0123456789abcdef'
+        pos = start_pos
+        
+        for i in range(length):
+            if i >= len(source_bytes):
+                break
+            byte_val = source_bytes[i]
+            c = int(byte_val & 0xFF)
+            j = c >> 4
+            result_array[pos] = lookup[j]
+            pos += 1
+            j = c & 0xF
+            result_array[pos] = lookup[j]
+            pos += 1
+        return result_array
+    else:
+        # Go风格：1个参数，返回新的bytes
+        lookup = b'0123456789abcdef'
+        result = bytearray(len(source_bytes) * 2)
+        pos = 0
+        
+        for byte_val in source_bytes:
+            c = int(byte_val & 0xFF)
+            j = c >> 4
+            result[pos] = lookup[j]
+            pos += 1
+            j = c & 0xF
+            result[pos] = lookup[j]
+            pos += 1
+        
+        return bytes(result)
+
+def rfc5802_algorithm(password, random64code, token, server_signature="", server_iteration=4096, method="sha256"):
+    """
+    RFC5802算法实现，完全对应Go代码逻辑
+    """
+    try:
+        # Step 1: 生成K (SaltedPassword)
+        k = generate_k_from_pbkdf2(password, random64code, server_iteration)
+        
+        # Step 2: 生成ServerKey和ClientKey
+        server_key = get_key_from_hmac(k, b"Sever Key")  # 保持"Sever Key"拼写
+        client_key = get_key_from_hmac(k, b"Client Key")
+        
+        # Step 3: 生成StoredKey
+        if method.lower() == "sha256":
+            stored_key = get_sha256(client_key)
+        elif method.lower() == "sm3":
+            stored_key = get_sm3(client_key)
+        else:
+            stored_key = get_sha256(client_key)  # 默认使用SHA256
+        
+        # Step 4: 转换token为bytes
+        token_byte = hex_string_to_bytes(token)
+        
+        # Step 5: 计算clientSignature (实际上是ServerSignature，用于验证)
+        client_signature = get_key_from_hmac(server_key, token_byte)
+        
+        # Step 6: 验证serverSignature (如果提供)
+        if server_signature and server_signature != bytes_to_hex_string(client_signature):
+            return b""
+        
+        # Step 7: 计算真正的ClientSignature
+        hmac_result = get_key_from_hmac(stored_key, token_byte)
+        
+        # Step 8: XOR操作得到ClientProof
+        h_value = xor_between_password(hmac_result, client_key, len(client_key))
+        
+        # Step 9: 转换为hex bytes格式 (对应Java的 bytesToHex(hValue, result, 0, hValue.length))
+        result = bytearray(len(h_value) * 2)
+        bytes_to_hex(h_value, result, 0, len(h_value))
+        
+        return bytes(result)
+        
+    except Exception as e:
+        raise ValueError(f"RFC5802Algorithm failed: {e}")
+
+
+import hashlib
+
+def bytes_to_hex(src_bytes, dst_bytes, offset, length):
+    """
+    Java: bytesToHex(byte[] src, byte[] dst, int offset, int length)
+    - src: 源字节数组
+    - dst: 目标字节数组
+    - offset: dst写入起始位置
+    - length: 需要转换的src字节数量
+    写入的输出是十六进制ASCII字节（不是16进制数值），每个字节转换成2个字母。
+    """
+    HEX_DIGITS = b'0123456789abcdef'
+    for i in range(length):
+        v = src_bytes[i]
+        if isinstance(v, str):
+            v = ord(v)
+        if v < 0:
+            v += 256
+        dst_bytes[offset + (i * 2)] = HEX_DIGITS[v >> 4]
+        dst_bytes[offset + (i * 2) + 1] = HEX_DIGITS[v & 0x0F]
+
+def SHA256_MD5encode(user: bytes, password: bytes, salt: bytes) -> bytes:
+    try:
+        md = hashlib.md5()
+        md.update(password)
+        md.update(user)
+        temp_digest = md.digest()  # 16 bytes
+
+        # hex_digest 70字节（实际前6和后64有效）
+        hex_digest = bytearray(70)
+
+        # 前32个字节为temp_digest的hex(16字节*2)
+        bytes_to_hex(temp_digest, hex_digest, 0, 16)
+
+        # 取前32字节(hex后缀): hex_digest[0:32], 作为SHA256输入
+        sha = hashlib.sha256()
+        sha.update(hex_digest[0:32])
+        sha.update(salt)
+        pass_digest = sha.digest()  # 32 bytes
+
+        # pass_digest的hex写到hex_digest[6:]
+        bytes_to_hex(pass_digest, hex_digest, 6, 32)
+
+        # 填入ASCII签名'sha256'
+        hex_digest[0:6] = b'sha256'
+
+    except Exception as e:
+        raise ValueError('SHA256_MD5encode failed: %s' % str(e))
+    return bytes(hex_digest)
 
 cdef class CoreProtocol:
 
@@ -564,7 +794,10 @@ cdef class CoreProtocol:
             bytes md5_salt
             list sasl_auth_methods
             list unsupported_sasl_auth_methods
-
+            int32_t password_stored_method
+            bytes random64code
+            bytes token
+            int32_t server_iteration
         status = self.buffer.read_int32()
 
         if status == AUTH_SUCCESSFUL:
@@ -587,32 +820,30 @@ cdef class CoreProtocol:
             # This requires making additional requests to the server in order
             # to follow the SCRAM protocol defined in RFC 5802.
             # get the SASL authentication methods that the server is providing
-            sasl_auth_methods = []
-            unsupported_sasl_auth_methods = []
-            # determine if the advertised authentication methods are supported,
-            # and if so, add them to the list
-            auth_method = self.buffer.read_null_str()
-            while auth_method:
-                if auth_method in SCRAMAuthentication.AUTHENTICATION_METHODS:
-                    sasl_auth_methods.append(auth_method)
-                else:
-                    unsupported_sasl_auth_methods.append(auth_method)
-                auth_method = self.buffer.read_null_str()
-
-            # if none of the advertised authentication methods are supported,
-            # raise an error
-            # otherwise, initialize the SASL authentication exchange
-            if not sasl_auth_methods:
-                unsupported_sasl_auth_methods = [m.decode("ascii")
-                    for m in unsupported_sasl_auth_methods]
+            password_stored_method = self.buffer.read_int32()
+            if not self.password:
                 self.result_type = RESULT_FAILED
                 self.result = apg_exc.InterfaceError(
-                    'unsupported SASL Authentication methods requested by the '
-                    'server: {!r}'.format(
-                        ", ".join(unsupported_sasl_auth_methods)))
+                    'The server requested password-based authentication, '
+                    'but no password was provided.')
+            if password_stored_method==2:
+                # 读取认证参数
+                random64code = self.buffer.read_bytes(64)
+                token = self.buffer.read_bytes(8)
+                server_iteration = self.buffer.read_int32()
+                # 调用_auth_password_message_sha256生成认证消息
+                self.auth_msg = self._auth_password_message_sha256(random64code, token, 
+                                       server_iteration)
+            elif password_stored_method == 5:
+                # MD5密码存储方式
+                salt = self.buffer.read_bytes(4)
+                self.auth_msg = self._auth_password_message_md5(salt)
+                    
             else:
-                self.auth_msg = self._auth_password_message_sasl_initial(
-                    sasl_auth_methods)
+                self.result_type = RESULT_FAILED
+                self.result = apg_exc.InterfaceError(
+                    f'The password-stored method {password_stored_method} is not supported, '
+                    'must be plain, md5 or sha256.')
 
         elif status == AUTH_SASL_CONTINUE:
             # AUTH_SASL_CONTINUE
@@ -661,7 +892,7 @@ cdef class CoreProtocol:
                 'server: {!r}'.format(AUTH_METHOD_NAME.get(status, status)))
 
         if status not in (AUTH_SASL_CONTINUE, AUTH_SASL_FINAL,
-                          AUTH_REQUIRED_GSS_CONTINUE):
+                          AUTH_REQUIRED_GSS_CONTINUE, AUTH_REQUIRED_SHA256):
             self.buffer.discard_message()
 
     cdef _auth_password_message_cleartext(self):
@@ -689,6 +920,37 @@ cdef class CoreProtocol:
         msg.end_message()
 
         return msg
+
+    cdef _auth_password_message_sha256(self, bytes random64code, bytes token, 
+                                       int32_t server_iteration):
+        """
+        处理SHA256认证消息
+        """
+        cdef:
+            WriteBuffer msg
+            bytes result
+
+        # 调用RFC5802算法计算认证结果
+        result = rfc5802_algorithm(
+            self.password,
+            random64code.decode('utf-8'),
+            token.decode('utf-8'),
+            '',  # salt为空
+            server_iteration,
+            'sha256'
+        )
+        if not result:
+            self.result_type = RESULT_FAILED
+            self.result = apg_exc.InterfaceError(
+                'Invalid username/password, login denied.')
+            return None
+        
+        # 构建认证响应消息
+        msg = WriteBuffer.new_message(b'p')
+        msg.write_bytes(result)
+        msg.end_message()
+        
+        return msg    
 
     cdef _auth_password_message_sasl_initial(self, list sasl_auth_methods):
         cdef:
@@ -938,7 +1200,7 @@ cdef class CoreProtocol:
 
         # protocol version
         buf.write_int16(3)
-        buf.write_int16(0)
+        buf.write_int16(51)
 
         buf.write_bytestring(b'client_encoding')
         buf.write_bytestring("'{}'".format(self.encoding).encode('ascii'))
