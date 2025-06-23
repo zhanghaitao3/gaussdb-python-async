@@ -165,10 +165,13 @@ class TestIntrospection(tb.ConnectedTestCase):
         await self._add_custom_codec(slow_intro_conn)
         try:
             await self.con.execute('''
+                DROP DOMAIN IF EXISTS intro_1_t;
+                DROP DOMAIN IF EXISTS intro_2_t;
+            ''')
+            await self.con.execute('''
                 CREATE DOMAIN intro_1_t AS int;
                 CREATE DOMAIN intro_2_t AS int;
             ''')
-
             await slow_intro_conn.fetchval('''
                 SELECT $1::intro_1_t
             ''', 10)

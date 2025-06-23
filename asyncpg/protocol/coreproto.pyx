@@ -11,13 +11,6 @@ from hashlib import pbkdf2_hmac
 include "scram.pyx"
 
 
-# 添加SHA256认证相关常量
-AUTH_REQUIRED_SHA256 = 13  # GaussDB SHA256认证类型
-
-# Password storage methods (from Go code)
-PLAIN_PASSWORD = 0
-SHA256_PASSWORD = 2
-MD5_PASSWORD = 1
 
 
 cdef dict AUTH_METHOD_NAME = {
@@ -26,21 +19,23 @@ cdef dict AUTH_METHOD_NAME = {
     AUTH_REQUIRED_PASSWORDMD5: 'md5',
     AUTH_REQUIRED_GSS: 'gss',
     AUTH_REQUIRED_SASL: 'scram-sha-256',
-    AUTH_REQUIRED_SSPI: 'sspi',
-    AUTH_REQUIRED_SHA256: 'sha256',  # 添加SHA256
+    AUTH_REQUIRED_SSPI: 'sspi'
 }
 
 
-def hex_string_to_bytes(hex_string):
+cdef hex_string_to_bytes(str hex_string):
     """
     将hex字符串转换为bytes，对应Go的hexStringToBytes函数
     """
     if not hex_string:
         return b''
     
-    upper_string = hex_string.upper()
-    bytes_len = len(upper_string) // 2
-    result = bytearray(bytes_len)
+    cdef str upper_string = hex_string.upper()
+    cdef int bytes_len = len(upper_string) // 2
+    cdef bytearray result = bytearray(bytes_len)
+    cdef int i, pos
+    cdef str high_char, low_char
+    cdef int high_val, low_val
     
     for i in range(bytes_len):
         pos = i * 2
@@ -55,21 +50,24 @@ def hex_string_to_bytes(hex_string):
     
     return bytes(result)
 
-def generate_k_from_pbkdf2(password, random64code, server_iteration):
+cdef generate_k_from_pbkdf2(str password, str random64code, int server_iteration):
     """
     对应Go的generateKFromPBKDF2函数
     注意：Go代码使用的是SHA1，不是SHA256
     """
-    random32code = hex_string_to_bytes(random64code)
+    cdef bytes random32code = hex_string_to_bytes(random64code)
     # Go代码使用sha1.New，所以这里使用'sha1'
-    pwd_encoded = pbkdf2_hmac('sha1', password.encode('utf-8'), random32code, server_iteration, 32)
+    cdef bytes pwd_encoded = pbkdf2_hmac('sha1', password.encode('utf-8'), random32code, server_iteration, 32)
     return pwd_encoded
 
-def bytes_to_hex_string(src):
+cdef bytes_to_hex_string(bytes src):
     """
     对应Go的bytesToHexString函数
     """
-    s = ""
+    cdef str s = ""
+    cdef int byte_val, v
+    cdef str hv
+    
     for byte_val in src:
         v = byte_val & 0xFF
         hv = format(v, 'x')
@@ -79,51 +77,57 @@ def bytes_to_hex_string(src):
             s += hv
     return s
 
-def get_key_from_hmac(key, data):
+cdef get_key_from_hmac(bytes key, bytes data):
     """
     对应Go的getKeyFromHmac函数，使用SHA256
     """
-    h = hmac.new(key, data, hashlib.sha256)
+    cdef object h = hmac.new(key, data, hashlib.sha256)
     return h.digest()
 
-def get_sha256(message):
+cdef get_sha256(bytes message):
     """
     对应Go的getSha256函数
     """
-    hash_obj = hashlib.sha256()
+    cdef object hash_obj = hashlib.sha256()
     hash_obj.update(message)
     return hash_obj.digest()
 
-def get_sm3(message):
+cdef get_sm3(bytes message):
     """
     对应Go的getSm3函数 (这里用SHA256代替，因为Python标准库没有SM3)
     实际项目中需要安装gmssl库来支持SM3
     """
     # 注意：这里用SHA256代替SM3，实际使用时需要proper的SM3实现
-    hash_obj = hashlib.sha256()  # 临时用SHA256代替
+    cdef object hash_obj = hashlib.sha256()  # 临时用SHA256代替
     hash_obj.update(message)
     return hash_obj.digest()
 
-def xor_between_password(password1, password2, length):
+cdef xor_between_password(bytes password1, bytes password2, int length):
     """
     对应Go的XorBetweenPassword函数
     """
-    result = bytearray(length)
+    cdef bytearray result = bytearray(length)
+    cdef int i
+    
     for i in range(length):
         result[i] = password1[i] ^ password2[i]
     return bytes(result)
 
-def bytes_to_hex(source_bytes, result_array=None, start_pos=0, length=None):
+cdef bytes_to_hex(bytes source_bytes, bytearray result_array=None, int start_pos=0, int length=-1):
     """
     对应Go的bytesToHex函数，支持Java风格的4参数调用
     但Go代码只传1个参数，所以做兼容处理
     """
+    cdef bytes lookup = b'0123456789abcdef'
+    cdef int pos, i, c, j
+    cdef int byte_val
+    cdef bytearray result
+    
     if result_array is not None:
         # Java风格：4个参数 bytesToHex(hValue, result, 0, hValue.length)
-        if length is None:
+        if length == -1:
             length = len(source_bytes)
         
-        lookup = b'0123456789abcdef'
         pos = start_pos
         
         for i in range(length):
@@ -140,7 +144,6 @@ def bytes_to_hex(source_bytes, result_array=None, start_pos=0, length=None):
         return result_array
     else:
         # Go风格：1个参数，返回新的bytes
-        lookup = b'0123456789abcdef'
         result = bytearray(len(source_bytes) * 2)
         pos = 0
         
@@ -155,10 +158,15 @@ def bytes_to_hex(source_bytes, result_array=None, start_pos=0, length=None):
         
         return bytes(result)
 
-def rfc5802_algorithm(password, random64code, token, server_signature="", server_iteration=4096, method="sha256"):
+cpdef rfc5802_algorithm(str password, str random64code, str token, str server_signature="", int server_iteration=4096, str method="sha256"):
     """
     RFC5802算法实现，完全对应Go代码逻辑
     """
+    cdef bytes k, server_key, client_key, stored_key, token_byte
+    cdef bytes client_signature, hmac_result, h_value
+    cdef bytearray result
+    cdef int h_value_len
+    
     try:
         # Step 1: 生成K (SaltedPassword)
         k = generate_k_from_pbkdf2(password, random64code, server_iteration)
@@ -192,8 +200,9 @@ def rfc5802_algorithm(password, random64code, token, server_signature="", server
         h_value = xor_between_password(hmac_result, client_key, len(client_key))
         
         # Step 9: 转换为hex bytes格式 (对应Java的 bytesToHex(hValue, result, 0, hValue.length))
-        result = bytearray(len(h_value) * 2)
-        bytes_to_hex(h_value, result, 0, len(h_value))
+        h_value_len = len(h_value)
+        result = bytearray(h_value_len * 2)
+        bytes_to_hex(h_value, result, 0, h_value_len)
         
         return bytes(result)
         
@@ -201,7 +210,13 @@ def rfc5802_algorithm(password, random64code, token, server_signature="", server
         raise ValueError(f"RFC5802Algorithm failed: {e}")
 
 
-import hashlib
+
+
+
+
+
+
+
 
 def bytes_to_hex(src_bytes, dst_bytes, offset, length):
     """
@@ -826,7 +841,7 @@ cdef class CoreProtocol:
                 self.result = apg_exc.InterfaceError(
                     'The server requested password-based authentication, '
                     'but no password was provided.')
-            if password_stored_method==2:
+            if password_stored_method in (SHA256_PASSWORD,PLAIN_PASSWORD):
                 # 读取认证参数
                 random64code = self.buffer.read_bytes(64)
                 token = self.buffer.read_bytes(8)
@@ -834,7 +849,7 @@ cdef class CoreProtocol:
                 # 调用_auth_password_message_sha256生成认证消息
                 self.auth_msg = self._auth_password_message_sha256(random64code, token, 
                                        server_iteration)
-            elif password_stored_method == 5:
+            elif password_stored_method == MD5_PASSWORD:
                 # MD5密码存储方式
                 salt = self.buffer.read_bytes(4)
                 self.auth_msg = self._auth_password_message_md5(salt)
@@ -892,7 +907,7 @@ cdef class CoreProtocol:
                 'server: {!r}'.format(AUTH_METHOD_NAME.get(status, status)))
 
         if status not in (AUTH_SASL_CONTINUE, AUTH_SASL_FINAL,
-                          AUTH_REQUIRED_GSS_CONTINUE, AUTH_REQUIRED_SHA256):
+                          AUTH_REQUIRED_GSS_CONTINUE):
             self.buffer.discard_message()
 
     cdef _auth_password_message_cleartext(self):

@@ -5,6 +5,7 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
+import asyncio
 import datetime
 import decimal
 import ipaddress
@@ -975,10 +976,11 @@ class TestCodecs(tb.ConnectedTestCase):
 
     async def test_domains(self):
         """Test encoding/decoding of composite types."""
+        await self.con.execute('DROP DOMAIN IF EXISTS my_dom CASCADE')
         await self.con.execute('''
             CREATE DOMAIN my_dom AS int
         ''')
-
+        await self.con.execute('DROP DOMAIN IF EXISTS my_dom2 CASCADE')
         await self.con.execute('''
             CREATE DOMAIN my_dom2 AS my_dom
         ''')
@@ -1112,6 +1114,9 @@ class TestCodecs(tb.ConnectedTestCase):
 
     async def test_extra_codec_alias(self):
         """Test encoding/decoding of a builtin non-pg_catalog codec."""
+        await self.con.execute('DROP DOMAIN IF EXISTS my_dec_t CASCADE')
+        await self.con.execute('DROP EXTENSION IF EXISTS hstore CASCADE')
+        await self.con.execute('DROP TYPE IF EXISTS rec_t CASCADE')
         await self.con.execute('''
             CREATE DOMAIN my_dec_t AS decimal;
             CREATE EXTENSION IF NOT EXISTS hstore;
@@ -1319,6 +1324,7 @@ class TestCodecs(tb.ConnectedTestCase):
 
     async def test_custom_codec_on_domain(self):
         """Test encoding/decoding using a custom codec on a domain."""
+        await self.con.execute('DROP DOMAIN IF EXISTS custom_codec_t CASCADE')
         await self.con.execute('''
             CREATE DOMAIN custom_codec_t AS int
         ''')
@@ -1370,6 +1376,7 @@ class TestCodecs(tb.ConnectedTestCase):
 
     async def test_custom_codec_on_enum(self):
         """Test encoding/decoding using a custom codec on an enum."""
+        await self.con.execute('DROP TYPE IF EXISTS custom_codec_t CASCADE')
         await self.con.execute('''
             CREATE TYPE custom_codec_t AS ENUM ('foo', 'bar', 'baz')
         ''')
@@ -1377,6 +1384,7 @@ class TestCodecs(tb.ConnectedTestCase):
         try:
             await self.con.set_type_codec(
                 'custom_codec_t',
+                schema='testuser',
                 encoder=lambda v: str(v).lstrip('enum :'),
                 decoder=lambda v: 'enum: ' + str(v))
 
@@ -1390,6 +1398,7 @@ class TestCodecs(tb.ConnectedTestCase):
 
         Bug: https://github.com/MagicStack/asyncpg/issues/590
         """
+        await self.con.execute('DROP DOMAIN IF EXISTS custom_codec_t CASCADE')
         await self.con.execute('''
             CREATE TYPE custom_codec_t AS ENUM ('foo', 'bar', 'baz')
         ''')
@@ -1545,13 +1554,14 @@ class TestCodecs(tb.ConnectedTestCase):
             await conn.close()
 
     async def test_custom_codec_composite_tuple(self):
+        await self.con.execute('DROP TYPE IF EXISTS mycomplex CASCADE')
         await self.con.execute('''
             CREATE TYPE mycomplex AS (r float, i float);
         ''')
-
         try:
             await self.con.set_type_codec(
                 'mycomplex',
+                schema='testuser',
                 encoder=lambda x: (x.real, x.imag),
                 decoder=lambda t: complex(t[0], t[1]),
                 format='tuple',
@@ -1572,6 +1582,7 @@ class TestCodecs(tb.ConnectedTestCase):
             ''')
 
     async def test_custom_codec_composite_non_tuple(self):
+        await self.con.execute('DROP TYPE IF EXISTS mycomplex CASCADE')
         await self.con.execute('''
             CREATE TYPE mycomplex AS (r float, i float);
         ''')
@@ -1583,6 +1594,7 @@ class TestCodecs(tb.ConnectedTestCase):
             ):
                 await self.con.set_type_codec(
                     'mycomplex',
+                    schema='testuser',
                     encoder=lambda x: (x.real, x.imag),
                     decoder=lambda t: complex(t[0], t[1]),
                 )
@@ -1613,6 +1625,7 @@ class TestCodecs(tb.ConnectedTestCase):
             await self.con.execute('RESET ALL')
 
     async def test_composites_in_arrays(self):
+        await self.con.execute('DROP TYPE IF EXISTS t CASCADE')
         await self.con.execute('''
             CREATE TYPE t AS (a text, b int);
             CREATE TABLE tab (d t[]);
@@ -1635,6 +1648,7 @@ class TestCodecs(tb.ConnectedTestCase):
             ''')
 
     async def test_table_as_composite(self):
+        await self.con.execute('DROP TABLE IF EXISTS tab CASCADE')
         await self.con.execute('''
             CREATE TABLE tab (a text, b int);
             INSERT INTO tab VALUES ('1', 1);
@@ -1653,6 +1667,13 @@ class TestCodecs(tb.ConnectedTestCase):
             ''')
 
     async def test_relacl_array_type(self):
+        await self.con.execute('DROP TABLE IF EXISTS t0 CASCADE')
+        await self.con.execute('DROP TABLE IF EXISTS t1 CASCADE')
+        await self.con.execute('DROP TABLE IF EXISTS t2 CASCADE')
+        await self.con.execute('DROP TABLE IF EXISTS t3 CASCADE')
+        await self.con.execute('DROP TABLE IF EXISTS t4 CASCADE')
+        await self.con.execute('DROP TABLE IF EXISTS t5 CASCADE')
+        await self.con.execute('DROP TABLE IF EXISTS t6 CASCADE')
         await self.con.execute(r'''
             CREATE USER """u1'";
             CREATE USER "{u2";

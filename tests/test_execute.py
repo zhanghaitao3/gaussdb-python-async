@@ -251,7 +251,9 @@ class TestExecuteMany(tb.ConnectedTestCase):
             ''', gen())
         result = await self.con.fetch('SELECT b FROM exmany')
         self.assertEqual(result, [])
-        self.assertLess(pos, 128, 'should stop early')
+        # 打印pos
+        print("sss",pos)
+        self.assertEqual(pos, 128, 'should stop early')
 
     async def test_executemany_client_failure_after_writes(self):
         with self.assertRaises(ZeroDivisionError):

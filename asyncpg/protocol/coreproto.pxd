@@ -63,6 +63,12 @@ cdef enum TransactionStatus:
     PQTRANS_INERROR = 3              # idle, within failed transaction
     PQTRANS_UNKNOWN = 4              # cannot determine status
 
+# Password storage methods
+cdef enum PasswordMethods:
+    PLAIN_PASSWORD = 0
+    SHA256_PASSWORD = 2
+    MD5_PASSWORD = 1
+
 
 ctypedef object (*decode_row_method)(object, const char*, ssize_t)
 

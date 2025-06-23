@@ -2149,6 +2149,7 @@ class TestConnectionGC(tb.ClusterTestCase):
             # tick event loop; asyncio.selector_events._SelectorSocketTransport
             # needs a chance to close itself and remove its reference to proto
             await asyncio.sleep(0)
+            await asyncio.sleep(0)
             protoref = weakref.ref(proto)
             del proto
             self.assertIsNone(protoref())
@@ -2164,6 +2165,7 @@ class TestConnectionGC(tb.ClusterTestCase):
                     ResourceWarning,
                     r'unclosed connection.*run in asyncio debug'):
                 await self._run_no_explicit_close_test()
+                
         finally:
             self.loop.set_debug(olddebug)
 
