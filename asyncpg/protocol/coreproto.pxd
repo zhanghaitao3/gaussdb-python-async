@@ -63,6 +63,12 @@ cdef enum TransactionStatus:
     PQTRANS_INERROR = 3              # idle, within failed transaction
     PQTRANS_UNKNOWN = 4              # cannot determine status
 
+# Password storage methods
+cdef enum PasswordMethods:
+    PLAIN_PASSWORD = 0
+    SHA256_PASSWORD = 2
+    MD5_PASSWORD = 1
+
 
 ctypedef object (*decode_row_method)(object, const char*, ssize_t)
 
@@ -136,6 +142,7 @@ cdef class CoreProtocol:
 
     cdef _auth_password_message_cleartext(self)
     cdef _auth_password_message_md5(self, bytes salt)
+    cdef _auth_password_message_sha256(self, bytes random64code, bytes token, int32_t server_iteration)
     cdef _auth_password_message_sasl_initial(self, list sasl_auth_methods)
     cdef _auth_password_message_sasl_continue(self, bytes server_response)
     cdef _auth_gss_init_gssapi(self)

@@ -19,21 +19,24 @@ from asyncpg import _testbase as tb
 class TestCopyFrom(tb.ConnectedTestCase):
 
     async def test_copy_from_table_basics(self):
-        await self.con.execute('''
-            CREATE TABLE copytab(a text, "b~" text, i int);
-            INSERT INTO copytab (a, "b~", i) (
-                SELECT 'a' || i::text, 'b' || i::text, i
-                FROM generate_series(1, 5) AS i
-            );
-            INSERT INTO copytab (a, "b~", i) VALUES('*', NULL, NULL);
-        ''')
-
+        table = "public.copytab"
+        await self.con.execute(f'''
+        DROP TABLE IF EXISTS {table};
+        CREATE TABLE {table}(a text, "b~" text, i int);
+        INSERT INTO {table} (a, "b~", i) (
+            SELECT 'a' || i::text, 'b' || i::text, i
+            FROM generate_series(1, 5) AS i
+        );
+        INSERT INTO {table} (a, "b~", i) VALUES('*', NULL, NULL);
+    ''')
+        count = await self.con.fetchval('SELECT COUNT(*) FROM public.copytab')
+        print('copytab row count:', count)
         try:
             f = io.BytesIO()
 
             # Basic functionality.
             res = await self.con.copy_from_table('copytab', output=f)
-
+            print('res:', res)
             self.assertEqual(res, 'COPY 6')
 
             output = f.getvalue().decode().split('\n')
@@ -51,7 +54,7 @@ class TestCopyFrom(tb.ConnectedTestCase):
             )
 
             # Test parameters.
-            await self.con.execute('SET search_path=none')
+            await self.con.execute('SET search_path=public')
 
             f.seek(0)
             f.truncate()
@@ -80,10 +83,12 @@ class TestCopyFrom(tb.ConnectedTestCase):
 
             await self.con.execute('SET search_path=public')
         finally:
-            await self.con.execute('DROP TABLE public.copytab')
+            await self.con.execute(f'DROP TABLE IF EXISTS {table}')
+
 
     async def test_copy_from_table_large_rows(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b text);
             INSERT INTO copytab (a, b) (
                 SELECT
@@ -365,6 +370,7 @@ class TestCopyTo(tb.ConnectedTestCase):
 
     async def test_copy_to_table_basics(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, "b~" text, i int);
         ''')
 
@@ -461,6 +467,7 @@ class TestCopyTo(tb.ConnectedTestCase):
 
     async def test_copy_to_table_large_rows(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b text);
         ''')
 
@@ -484,10 +491,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(res, 'COPY 100')
 
         finally:
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
 
     async def test_copy_to_table_from_bytes_like(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b text);
         ''')
 
@@ -496,10 +504,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             res = await self.con.copy_to_table('copytab', source=data)
             self.assertEqual(res, 'COPY 2')
         finally:
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
 
     async def test_copy_to_table_fail_in_source_1(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b text);
         ''')
 
@@ -521,10 +530,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(await self.con.fetchval('SELECT 1'), 1)
 
         finally:
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
 
     async def test_copy_to_table_fail_in_source_2(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b text);
         ''')
 
@@ -550,10 +560,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(await self.con.fetchval('SELECT 1'), 1)
 
         finally:
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
 
     async def test_copy_to_table_timeout(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b text);
         ''')
 
@@ -579,10 +590,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(await self.con.fetchval('SELECT 1'), 1)
 
         finally:
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
 
     async def test_copy_to_table_from_file_path(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, "b~" text, i int);
         ''')
 
@@ -625,6 +637,7 @@ class TestCopyTo(tb.ConnectedTestCase):
 
     async def test_copy_records_to_table_1(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a text, b int, c timestamptz);
         ''')
 
@@ -645,7 +658,7 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(res, 'COPY 101')
 
         finally:
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
 
     async def test_copy_records_to_table_where(self):
         if not self.con._server_caps.sql_copy_from_where:
@@ -653,6 +666,7 @@ class TestCopyTo(tb.ConnectedTestCase):
                 'COPY WHERE not supported on server')
 
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab_where;
             CREATE TABLE copytab_where(a text, b int, c timestamptz);
         ''')
 
@@ -674,10 +688,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(res, 'COPY 101')
 
         finally:
-            await self.con.execute('DROP TABLE copytab_where')
+            await self.con.execute('DROP TABLE public.copytab_where')
 
     async def test_copy_records_to_table_async(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab_async;
             CREATE TABLE copytab_async(a text, b int, c timestamptz);
         ''')
 
@@ -698,10 +713,11 @@ class TestCopyTo(tb.ConnectedTestCase):
             self.assertEqual(res, 'COPY 101')
 
         finally:
-            await self.con.execute('DROP TABLE copytab_async')
+            await self.con.execute('DROP TABLE public.copytab_async')
 
     async def test_copy_records_to_table_no_binary_codec(self):
         await self.con.execute('''
+            DROP TABLE IF EXISTS copytab;
             CREATE TABLE copytab(a uuid);
         ''')
 
@@ -728,4 +744,4 @@ class TestCopyTo(tb.ConnectedTestCase):
             await self.con.reset_type_codec(
                 'uuid', schema='pg_catalog'
             )
-            await self.con.execute('DROP TABLE copytab')
+            await self.con.execute('DROP TABLE public.copytab')
