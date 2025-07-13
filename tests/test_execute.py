@@ -7,7 +7,6 @@
 
 import asyncio
 import asyncpg
-import unittest
 
 from asyncpg import _testbase as tb
 from asyncpg import exceptions
@@ -104,7 +103,8 @@ class TestExecuteMany(tb.ConnectedTestCase):
     def setUp(self):
         super().setUp()
         self.loop.run_until_complete(self.con.execute(
-            'CREATE TABLE exmany (a text, b int PRIMARY KEY)'))
+            """DROP TABLE IF EXISTS exmany;
+            CREATE TABLE exmany (a text, b int PRIMARY KEY)"""))
 
     def tearDown(self):
         self.loop.run_until_complete(self.con.execute('DROP TABLE exmany'))

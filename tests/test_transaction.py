@@ -237,22 +237,18 @@ class TestTransaction(tb.ConnectedTestCase):
 
                         async with self.con.transaction(isolation=outer_level):
                             if inner and outer != inner:
-                                print('nested transaction has a different isolation level: current {!r} != outer {!r}'.format(
-                                        inner, outer
-                                    ))
-                                print(asyncpg.InterfaceError)
                                 with self.assertRaisesRegex(
                                     asyncpg.InterfaceError,
-                                    'nested transaction has a different isolation level: current {!r} != outer {!r}'.format(
-                                        inner, outer
-                                    )
+                                    'nested transaction has a different '
+                                    'isolation level: current {!r} != '
+                                    'outer {!r}'.format(inner, outer)
                                 ):
                                     async with self.con.transaction(
-                                            isolation=inner,
+                                        isolation=inner,
                                     ):
                                         pass
                             else:
                                 async with self.con.transaction(
-                                        isolation=inner,
+                                    isolation=inner,
                                 ):
                                     pass

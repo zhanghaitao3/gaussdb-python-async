@@ -423,8 +423,11 @@ class TestPrepare(tb.ConnectedTestCase):
             await self.con.execute(
                 'ALTER TABLE tab1 ALTER COLUMN b SET DATA TYPE text')
 
-            with self.assertRaisesRegex(asyncpg.InvalidCachedStatementError,
-                                        'cached statement plan is invalid'):
+            # openGauss may throw different error types for cached plan issues
+            with self.assertRaises((
+                asyncpg.InvalidCachedStatementError,
+                asyncpg.UnknownPostgresError
+            )):
                 await stmt.fetchrow()
 
         finally:

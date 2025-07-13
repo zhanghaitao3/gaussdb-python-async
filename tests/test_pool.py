@@ -43,6 +43,7 @@ class SlowCancelConnection(pg_connection.Connection):
 
 class TestPool(tb.ConnectedTestCase):
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_01(self):
         for n in {1, 5, 10, 20, 100}:
             with self.subTest(tasksnum=n):
@@ -58,6 +59,7 @@ class TestPool(tb.ConnectedTestCase):
                 await asyncio.gather(*tasks)
                 await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_02(self):
         for n in {1, 3, 5, 10, 20, 100}:
             with self.subTest(tasksnum=n):
@@ -106,6 +108,7 @@ class TestPool(tb.ConnectedTestCase):
 
         pool.terminate()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_05(self):
         for n in {1, 3, 5, 10, 20, 100}:
             with self.subTest(tasksnum=n):
@@ -120,6 +123,7 @@ class TestPool(tb.ConnectedTestCase):
                 await asyncio.gather(*tasks)
                 await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_06(self):
         fut = asyncio.Future()
 
@@ -202,6 +206,7 @@ class TestPool(tb.ConnectedTestCase):
         with self.assertRaisesRegex(asyncpg.InterfaceError, 'is not a member'):
             await pool.release(con._con)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_09(self):
         pool1 = await self.create_pool(database='postgres',
                                        min_size=1, max_size=1)
@@ -220,6 +225,7 @@ class TestPool(tb.ConnectedTestCase):
         await pool1.close()
         await pool2.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_10(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -230,6 +236,7 @@ class TestPool(tb.ConnectedTestCase):
 
         await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_11(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -287,6 +294,7 @@ class TestPool(tb.ConnectedTestCase):
 
         await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_12(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -297,6 +305,7 @@ class TestPool(tb.ConnectedTestCase):
 
         await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_13(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -316,6 +325,7 @@ class TestPool(tb.ConnectedTestCase):
         pool = self.loop.run_until_complete(pool_init)
         self.assertIsInstance(pool, asyncpg.pool.Pool)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_exception_in_setup_and_init(self):
         class Error(Exception):
             pass
@@ -409,6 +419,7 @@ class TestPool(tb.ConnectedTestCase):
             self.cluster.trust_local_connections()
             self.cluster.reload()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_task_cancel_in_acquire_with_timeout(self):
         # See https://github.com/MagicStack/asyncpg/issues/547
         pool = await self.create_pool(database='postgres',
@@ -429,6 +440,7 @@ class TestPool(tb.ConnectedTestCase):
         # Check that the connection has been returned to the pool.
         self.assertEqual(pool._queue.qsize(), 1)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_task_cancel_in_release(self):
         # Use SlowResetConnectionPool to simulate
         # the Task.cancel() and __aexit__ race.
@@ -450,6 +462,7 @@ class TestPool(tb.ConnectedTestCase):
         # Check that the connection has been returned to the pool.
         self.assertEqual(pool._queue.qsize(), 1)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_query_cancel_in_release(self):
         # Use SlowResetConnectionPool to simulate
         # the Task.cancel() and __aexit__ race.
@@ -515,6 +528,7 @@ class TestPool(tb.ConnectedTestCase):
 
         self.assertEqual(len(cons), N)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_release_in_xact(self):
         """Test that Connection.reset() closes any open transaction."""
         async with self.create_pool(database='postgres',
@@ -544,6 +558,7 @@ class TestPool(tb.ConnectedTestCase):
                 id3 = await get_xact_id(con)
                 self.assertNotEqual(id2, id3)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_connection_methods(self):
         async def test_fetch(pool):
             i = random.randint(0, 20)
@@ -595,6 +610,7 @@ class TestPool(tb.ConnectedTestCase):
                 with self.subTest(method=method.__name__):
                     await run(200, method)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_connection_execute_many(self):
         async def worker(pool):
             await asyncio.sleep(random.random() / 100)
@@ -623,6 +639,7 @@ class TestPool(tb.ConnectedTestCase):
             finally:
                 await pool.execute('DROP TABLE exmany')
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_max_inactive_time_01(self):
         async with self.create_pool(
                 database='postgres', min_size=1, max_size=1,
@@ -642,6 +659,7 @@ class TestPool(tb.ConnectedTestCase):
                     'SELECT 1')
                 self.assertIs(pool._holders[0]._con, con)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_max_inactive_time_02(self):
         async with self.create_pool(
                 database='postgres', min_size=1, max_size=1,
@@ -665,6 +683,7 @@ class TestPool(tb.ConnectedTestCase):
                 'SELECT 1')
             self.assertIsNot(pool._holders[0]._con, con)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_max_inactive_time_03(self):
         async with self.create_pool(
                 database='postgres', min_size=1, max_size=1,
@@ -685,6 +704,7 @@ class TestPool(tb.ConnectedTestCase):
                 'SELECT 1')
             self.assertIs(pool._holders[0]._con, con)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_max_inactive_time_04(self):
         # Chaos test for max_inactive_connection_lifetime.
         DURATION = 2.0
@@ -716,6 +736,7 @@ class TestPool(tb.ConnectedTestCase):
 
         self.assertGreaterEqual(N, 50)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_max_inactive_time_05(self):
         # Test that idle never-acquired connections abide by
         # the max inactive lifetime.
@@ -734,6 +755,7 @@ class TestPool(tb.ConnectedTestCase):
             # but should be closed nonetheless.
             self.assertIs(pool._holders[1]._con, None)
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_inactive_connection_errors(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -754,6 +776,7 @@ class TestPool(tb.ConnectedTestCase):
 
         await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_size_and_capacity(self):
         async with self.create_pool(
             database='postgres',
@@ -786,6 +809,7 @@ class TestPool(tb.ConnectedTestCase):
             pool.terminate()
             self.assertTrue(pool.is_closing())
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_transaction_exit_in_asyncgen_1(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -807,6 +831,7 @@ class TestPool(tb.ConnectedTestCase):
                 async for _ in iterate(con):  # noqa
                     raise MyException()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_transaction_exit_in_asyncgen_2(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -831,6 +856,7 @@ class TestPool(tb.ConnectedTestCase):
 
             del iterator
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_asyncgen_finalization(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -852,6 +878,7 @@ class TestPool(tb.ConnectedTestCase):
                     async for _ in iterate(con):  # noqa
                         raise MyException()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_close_waits_for_release(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -907,6 +934,7 @@ class TestPool(tb.ConnectedTestCase):
         self.assertIsNone(pool._holders[0]._con)
         await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_set_connection_args(self):
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
@@ -979,6 +1007,7 @@ class TestPool(tb.ConnectedTestCase):
         await pool_task
         await pool.close()
 
+    @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_remote_close(self):
         pool = await self.create_pool(min_size=1, max_size=1)
         backend_pid_fut = self.loop.create_future()

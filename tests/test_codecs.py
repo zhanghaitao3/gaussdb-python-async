@@ -5,7 +5,6 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
-import asyncio
 import datetime
 import decimal
 import ipaddress
@@ -525,7 +524,10 @@ class TestCodecs(tb.ConnectedTestCase):
                                 math.isclose(result, outputval, rel_tol=1e-6),
                                 err_msg)
                     else:
-                        if isinstance(result, datetime.datetime) and typname == 'date' and isinstance(outputval, datetime.date) and not isinstance(outputval, datetime.datetime):
+                        if (isinstance(result, datetime.datetime) and 
+                            typname == 'date' and 
+                            isinstance(outputval, datetime.date) and 
+                            not isinstance(outputval, datetime.datetime)):
                             self.assertEqual(result.date(), outputval, err_msg)
                         else:
                             self.assertEqual(result, outputval, err_msg)
@@ -1200,7 +1202,8 @@ class TestCodecs(tb.ConnectedTestCase):
 
     async def test_custom_codec_text(self):
         """Test encoding/decoding using a custom codec in text mode.
-        GaussDB hstore extension is in pg_catalog schema, so we need to set schema to pg_catalog
+        GaussDB hstore extension is in pg_catalog schema,
+        so we need to set schema to pg_catalog
         """
         await self.con.execute('''
             CREATE EXTENSION IF NOT EXISTS hstore
@@ -1219,7 +1222,8 @@ class TestCodecs(tb.ConnectedTestCase):
             return ','.join('{}=>{}'.format(k, v) for k, v in obj.items())
 
         try:
-            await self.con.set_type_codec('hstore',schema='pg_catalog', encoder=hstore_encoder,
+            await self.con.set_type_codec('hstore', schema='pg_catalog',
+                                          encoder=hstore_encoder,
                                           decoder=hstore_decoder)
 
             st = await self.con.prepare('''
@@ -1257,14 +1261,13 @@ class TestCodecs(tb.ConnectedTestCase):
             # ''')
             pass
 
-
     async def test_custom_codec_binary(self):
         """Test encoding/decoding using a custom codec in binary mode.
-        GaussDB hstore extension is in pg_catalog schema, so we need to set schema to pg_catalog
+        GaussDB hstore extension is in pg_catalog schema,
+        so we need to set schema to pg_catalog
         """
-        
         await self.con.execute('''
-            CREATE EXTENSION IF NOT EXISTS hstore 
+            CREATE EXTENSION IF NOT EXISTS hstore
         ''')
 
         longstruct = struct.Struct('!L')
@@ -1310,7 +1313,8 @@ class TestCodecs(tb.ConnectedTestCase):
             return buffer
 
         try:
-            await self.con.set_type_codec('hstore', schema='pg_catalog', encoder=hstore_encoder,
+            await self.con.set_type_codec('hstore', schema='pg_catalog', 
+                                          encoder=hstore_encoder,
                                           decoder=hstore_decoder,
                                           format='binary')
 
@@ -1398,7 +1402,6 @@ class TestCodecs(tb.ConnectedTestCase):
 
     async def test_custom_codec_on_enum(self):
         """Test encoding/decoding using a custom codec on an enum.
-        GaussDB update user to testuser1, so we need to set schema to testuser1
         """
         await self.con.execute('DROP TYPE IF EXISTS custom_codec_t CASCADE')
         await self.con.execute('''
@@ -1408,7 +1411,6 @@ class TestCodecs(tb.ConnectedTestCase):
         try:
             await self.con.set_type_codec(
                 'custom_codec_t',
-                schema='testuser1',
                 encoder=lambda v: str(v).lstrip('enum :'),
                 decoder=lambda v: 'enum: ' + str(v))
 
@@ -1538,6 +1540,7 @@ class TestCodecs(tb.ConnectedTestCase):
         ]
 
         conn = await self.connect()
+        
         def _encoder(value):
             return tuple(value)
 
@@ -1572,7 +1575,8 @@ class TestCodecs(tb.ConnectedTestCase):
                             val = 'tab.v'
 
                         res = await conn.fetchval(
-                            'SELECT ({val})::text FROM tab'.format(val=val))
+                            'SELECT ({val})::text FROM tab'.format(
+                                val=val))
                         self.assertEqual(res, expected_result)
                     finally:
                         # Use IF EXISTS to avoid errors if table doesn't exist
@@ -1587,9 +1591,6 @@ class TestCodecs(tb.ConnectedTestCase):
                 pass  # Ignore close errors
 
     async def test_custom_codec_composite_tuple(self):
-        """
-        GaussDB update user to testuser1, so we need to set schema to testuser1
-        """
         await self.con.execute('DROP TYPE IF EXISTS mycomplex CASCADE')
         await self.con.execute('''
             CREATE TYPE mycomplex AS (r float, i float);
@@ -1597,7 +1598,7 @@ class TestCodecs(tb.ConnectedTestCase):
         try:
             await self.con.set_type_codec(
                 'mycomplex',
-                schema='testuser1',
+                # schema='testuser',
                 encoder=lambda x: (x.real, x.imag),
                 decoder=lambda t: complex(t[0], t[1]),
                 format='tuple',
@@ -1618,9 +1619,6 @@ class TestCodecs(tb.ConnectedTestCase):
             ''')
 
     async def test_custom_codec_composite_non_tuple(self):
-        """
-        GaussDB update user to testuser1, so we need to set schema to testuser1
-        """
         await self.con.execute('DROP TYPE IF EXISTS mycomplex CASCADE')
         await self.con.execute('''
             CREATE TYPE mycomplex AS (r float, i float);
@@ -1633,7 +1631,6 @@ class TestCodecs(tb.ConnectedTestCase):
             ):
                 await self.con.set_type_codec(
                     'mycomplex',
-                    schema='testuser1',
                     encoder=lambda x: (x.real, x.imag),
                     decoder=lambda t: complex(t[0], t[1]),
                 )
@@ -1657,7 +1654,8 @@ class TestCodecs(tb.ConnectedTestCase):
 
                 # Check encoding:
                 # Extract pure date from the datetime
-                pure_date = row['date'].date() if hasattr(row['date'], 'date') else row['date']
+                pure_date = (row['date'].date() if hasattr(row['date'], 'date') 
+                            else row['date'])
                 res = await self.con.fetchval(
                     'SELECT now() = ($1::date + $2::timetz::time)',
                     pure_date, row['time'])
