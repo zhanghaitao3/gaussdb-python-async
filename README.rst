@@ -1,5 +1,5 @@
-asyncpg -- A fast PostgreSQL Database Client Library for Python/asyncio
-=======================================================================
+asyncpg-gaussdb -- A fast GaussDB/openGauss Database Client Library for Python/asyncio
+=====================================================================================
 
 .. image:: https://github.com/MagicStack/asyncpg/workflows/Tests/badge.svg
    :target: https://github.com/MagicStack/asyncpg/actions?query=workflow%3ATests+branch%3Amaster
@@ -7,16 +7,21 @@ asyncpg -- A fast PostgreSQL Database Client Library for Python/asyncio
 .. image:: https://img.shields.io/pypi/v/asyncpg.svg
    :target: https://pypi.python.org/pypi/asyncpg
 
-**asyncpg** is a database interface library designed specifically for
-PostgreSQL and Python/asyncio.  asyncpg is an efficient, clean implementation
-of PostgreSQL server binary protocol for use with Python's ``asyncio``
-framework.  You can read more about asyncpg in an introductory
-`blog post <http://magic.io/blog/asyncpg-1m-rows-from-postgres-to-python/>`_.
+**asyncpg-gaussdb** is a database interface library designed specifically for
+GaussDB and openGauss databases with Python/asyncio. This fork of asyncpg is
+optimized for GaussDB/openGauss compatibility, including native SHA256
+authentication support and enhanced features for enterprise database environments.
 
-asyncpg requires Python 3.8 or later and is supported for PostgreSQL
-versions 9.5 to 17.  Other PostgreSQL versions or other databases
-implementing the PostgreSQL protocol *may* work, but are not being
-actively tested.
+asyncpg-gaussdb requires Python 3.8 or later and is specifically designed for
+GaussDB and openGauss databases. It includes compatibility fixes and
+optimizations for openGauss-specific features and enterprise database requirements.
+
+**Key Features for GaussDB/openGauss:**
+* Native SHA256 authentication support
+* Optimized for openGauss protocol compatibility
+* Enhanced error handling for enterprise database features
+* Support for GaussDB-specific data types and functions
+* Comprehensive test suite adapted for openGauss
 
 
 Documentation
@@ -29,7 +34,8 @@ The project documentation can be found
 Performance
 -----------
 
-In our testing asyncpg is, on average, **5x** faster than psycopg3.
+asyncpg-gaussdb maintains the high performance characteristics of the original
+asyncpg library while being optimized for GaussDB/openGauss environments.
 
 .. image:: https://raw.githubusercontent.com/MagicStack/asyncpg/master/performance.png?fddca40ab0
     :target: https://gistpreview.github.io/?0ed296e93523831ea0918d42dd1258c2
@@ -42,31 +48,31 @@ in June 2023 (click on the chart to see full details).
 Features
 --------
 
-asyncpg implements PostgreSQL server protocol natively and exposes its
-features directly, as opposed to hiding them behind a generic facade
-like DB-API.
+asyncpg-gaussdb implements the GaussDB/openGauss server protocol natively and
+exposes its features directly, optimized for enterprise database environments:
 
-This enables asyncpg to have easy-to-use support for:
-
-* **prepared statements**
-* **scrollable cursors**
-* **partial iteration** on query results
+* **SHA256 authentication** - Native support for GaussDB/openGauss authentication
+* **prepared statements** - Optimized for openGauss query execution
+* **scrollable cursors** - Full cursor support for large result sets
+* **partial iteration** on query results - Memory-efficient data processing
 * automatic encoding and decoding of composite types, arrays,
   and any combination of those
 * straightforward support for custom data types
+* **openGauss compatibility** - Comprehensive test suite and error handling
+* **Enterprise features** - Optimized for production GaussDB environments
 
 
 Installation
 ------------
 
-asyncpg is available on PyPI.  When not using GSSAPI/SSPI authentication it
-has no dependencies.  Use pip to install::
+asyncpg-gaussdb is available on PyPI. When not using GSSAPI/SSPI authentication it
+has no dependencies. Use pip to install::
 
-    $ pip install asyncpg
+    $ pip install async-gaussdb
 
 If you need GSSAPI/SSPI authentication, use::
 
-    $ pip install 'asyncpg[gssauth]'
+    $ pip install 'async-gaussdb[gssauth]'
 
 For more details, please `see the documentation
 <https://magicstack.github.io/asyncpg/current/installation.html>`_.
@@ -81,8 +87,16 @@ Basic Usage
     import asyncpg
 
     async def run():
-        conn = await asyncpg.connect(user='user', password='password',
-                                     database='database', host='127.0.0.1')
+        # Connect to GaussDB/openGauss
+        conn = await asyncpg.connect(
+            user='omm',
+            password='your_password',
+            database='postgres',
+            host='127.0.0.1',
+            port=5432
+        )
+        
+        # Execute queries with full GaussDB support
         values = await conn.fetch(
             'SELECT * FROM mytable WHERE id = $1',
             10,
@@ -92,7 +106,52 @@ Basic Usage
     asyncio.run(run())
 
 
+GaussDB/openGauss Specific Features
+----------------------------------
+
+This library includes enhanced support for GaussDB and openGauss databases:
+
+.. code-block:: python
+
+    import asyncio
+    import asyncpg
+
+    async def run():
+        # Connect with SHA256 authentication (GaussDB/openGauss specific)
+        conn = await asyncpg.connect(
+            user='omm',
+            password='your_password',
+            database='postgres',
+            host='127.0.0.1',
+            port=5432
+        )
+        
+        # Use GaussDB-specific features
+        # The library automatically handles openGauss protocol differences
+        values = await conn.fetch(
+            'SELECT * FROM mytable WHERE id = $1',
+            10,
+        )
+        await conn.close()
+
+    asyncio.run(run())
+
+
+Development with Docker
+----------------------
+
+A Dockerfile is provided for development with openGauss:
+
+.. code-block:: bash
+
+    # Build the development image
+    docker build -t asyncpg-gaussdb-dev .
+    
+    # Run the container
+    docker run -it asyncpg-gaussdb-dev
+
+
 License
 -------
 
-asyncpg is developed and distributed under the Apache 2.0 license.
+asyncpg-gaussdb is developed and distributed under the Apache 2.0 license.
