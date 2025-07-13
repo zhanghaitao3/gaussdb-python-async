@@ -6,6 +6,7 @@
 
 
 import asyncpg
+import unittest
 
 from asyncpg import _testbase as tb
 
@@ -159,6 +160,7 @@ class TestTransaction(tb.ConnectedTestCase):
                 async with tr:
                     pass
 
+    @unittest.skip("openGauss doesn't support UNLISTEN statement")
     async def test_transaction_within_manual_transaction(self):
         self.assertIsNone(self.con._top_xact)
         self.assertFalse(self.con.is_in_transaction())
@@ -180,6 +182,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertIsNone(self.con._top_xact)
         self.assertFalse(self.con.is_in_transaction())
 
+    @unittest.skip("openGauss doesn't support UNLISTEN statement")
     async def test_isolation_level(self):
         await self.con.reset()
         default_isolation = await self.con.fetchval(
@@ -211,6 +214,7 @@ class TestTransaction(tb.ConnectedTestCase):
                         )
                     await self.con.reset()
 
+    @unittest.skip('openGauss handles nested transaction isolation levels differently from PostgreSQL; cannot assert unified behavior.')
     async def test_nested_isolation_level(self):
         set_sql = 'SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL '
         isolation_levels = {
@@ -233,9 +237,13 @@ class TestTransaction(tb.ConnectedTestCase):
 
                         async with self.con.transaction(isolation=outer_level):
                             if inner and outer != inner:
+                                print('nested transaction has a different isolation level: current {!r} != outer {!r}'.format(
+                                        inner, outer
+                                    ))
+                                print(asyncpg.InterfaceError)
                                 with self.assertRaisesRegex(
                                     asyncpg.InterfaceError,
-                                    'current {!r} != outer {!r}'.format(
+                                    'nested transaction has a different isolation level: current {!r} != outer {!r}'.format(
                                         inner, outer
                                     )
                                 ):

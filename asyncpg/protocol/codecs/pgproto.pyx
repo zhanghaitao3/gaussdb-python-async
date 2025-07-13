@@ -224,7 +224,7 @@ cdef init_pseudo_codecs():
 
     # OID and friends
     oid_types = [
-        OIDOID, XIDOID, CIDOID
+        OIDOID, CIDOID
     ]
 
     for oid_type in oid_types:
@@ -232,6 +232,11 @@ cdef init_pseudo_codecs():
                             <encode_func>pgproto.uint4_encode,
                             <decode_func>pgproto.uint4_decode,
                             PG_FORMAT_BINARY)
+    
+    register_core_codec(XIDOID,
+                        <encode_func>pgproto.text_encode,
+                        <decode_func>pgproto.text_decode,
+                        PG_FORMAT_TEXT)
 
     # 64-bit OID types
     oid8_types = [
@@ -374,10 +379,11 @@ cdef init_tid_codecs():
 
 
 cdef init_txid_codecs():
+
     register_core_codec(TXID_SNAPSHOTOID,
-                        <encode_func>pgproto.pg_snapshot_encode,
-                        <decode_func>pgproto.pg_snapshot_decode,
-                        PG_FORMAT_BINARY)
+                        <encode_func>pgproto.text_encode,
+                        <decode_func>pgproto.text_decode,
+                        PG_FORMAT_TEXT)
 
     register_core_codec(PG_SNAPSHOTOID,
                         <encode_func>pgproto.pg_snapshot_encode,

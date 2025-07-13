@@ -7,7 +7,7 @@
 
 import asyncio
 import json
-
+import unittest
 from asyncpg import _testbase as tb
 from asyncpg import connection as apg_con
 
@@ -78,6 +78,7 @@ class TestIntrospection(tb.ConnectedTestCase):
         with self.assertRunUnder(MAX_RUNTIME):
             await self.con.fetchval('SELECT $1::int[]', [1, 2])
 
+    @unittest.skip('EXTENSION is not yet supported.')
     @tb.with_connection_options(statement_cache_size=0)
     async def test_introspection_no_stmt_cache_01(self):
         old_uid = apg_con._uid
@@ -99,6 +100,7 @@ class TestIntrospection(tb.ConnectedTestCase):
 
         self.assertEqual(apg_con._uid, old_uid)
 
+    @unittest.skip('EXTENSION is not yet supported.')
     @tb.with_connection_options(max_cacheable_statement_size=1)
     async def test_introspection_no_stmt_cache_02(self):
         # max_cacheable_statement_size will disable caching both for
@@ -157,6 +159,7 @@ class TestIntrospection(tb.ConnectedTestCase):
             await self.con.reset_type_codec(
                 'json', schema='pg_catalog')
 
+    @unittest.skip('DOMAIN is not yet supported')
     async def test_introspection_retries_after_cache_bust(self):
         # Test that codec cache bust racing with the introspection
         # query would cause introspection to retry.
@@ -200,6 +203,7 @@ class TestIntrospection(tb.ConnectedTestCase):
             ''')
             await slow_intro_conn.close()
 
+    @unittest.skip('DOMAIN is not yet supported.')
     @tb.with_connection_options(database='asyncpg_intro_test')
     async def test_introspection_loads_basetypes_of_domains(self):
         # Test that basetypes of domains are loaded to the

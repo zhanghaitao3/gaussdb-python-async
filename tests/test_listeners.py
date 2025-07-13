@@ -13,7 +13,7 @@ import unittest
 from asyncpg import _testbase as tb
 from asyncpg import exceptions
 
-
+@unittest.skip('UNLISTEN statement is not yet supported.')
 class TestListeners(tb.ClusterTestCase):
 
     async def test_listen_01(self):
@@ -117,7 +117,7 @@ class TestListeners(tb.ClusterTestCase):
 
                     await con.add_listener('ipc', listener1)
 
-
+@unittest.skip('UNLISTEN statement is not yet supported.')
 class TestLogListeners(tb.ConnectedTestCase):
 
     @tb.with_connection_options(server_settings={
