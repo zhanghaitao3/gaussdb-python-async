@@ -30,13 +30,11 @@ class TestCopyFrom(tb.ConnectedTestCase):
         INSERT INTO {table} (a, "b~", i) VALUES('*', NULL, NULL);
     ''')
         count = await self.con.fetchval('SELECT COUNT(*) FROM public.copytab')
-        print('copytab row count:', count)
         try:
             f = io.BytesIO()
 
             # Basic functionality.
             res = await self.con.copy_from_table('copytab', output=f)
-            print('res:', res)
             self.assertEqual(res, 'COPY 6')
 
             output = f.getvalue().decode().split('\n')
@@ -84,7 +82,6 @@ class TestCopyFrom(tb.ConnectedTestCase):
             await self.con.execute('SET search_path=public')
         finally:
             await self.con.execute(f'DROP TABLE IF EXISTS {table}')
-
 
     async def test_copy_from_table_large_rows(self):
         await self.con.execute('''

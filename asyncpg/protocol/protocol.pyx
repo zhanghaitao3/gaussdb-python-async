@@ -645,6 +645,11 @@ cdef class BaseProtocol(CoreProtocol):
             # in Windows, where, instead of calling protocol.connection_lost()
             # a ConnectionResetError will be thrown into the task.
             pass
+        except asyncio.TimeoutError:
+            # If we timeout waiting for the server to respond to terminate,
+            # it's likely the server has already closed the connection.
+            # This is a common scenario and should not be treated as an error.
+            pass
         finally:
             self.waiter = None
             self.transport.abort()
@@ -897,7 +902,9 @@ cdef class BaseProtocol(CoreProtocol):
             elif self.state == PROTOCOL_TERMINATING:
                 # We are waiting for the connection to drop, so
                 # ignore any stray results at this point.
-                pass
+                # However, we should complete the waiter to allow close() to finish
+                if self.waiter is not None and not self.waiter.done():
+                    self.waiter.set_result(None)
 
             else:
                 raise apg_exc.InternalClientError(

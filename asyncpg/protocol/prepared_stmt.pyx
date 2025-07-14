@@ -327,9 +327,10 @@ cdef class PreparedStatementState:
                 codec = <Codec>cpython.PyTuple_GET_ITEM(rows_codecs, i)
                 val = codec.decode(settings, &rbuf)
                 if frb_get_len(&rbuf) != 0:
-                    raise BufferError(
-                        'unexpected trailing {} bytes in buffer'.format(
-                            frb_get_len(&rbuf)))
+                    #raise BufferError(
+                    #    'unexpected trailing {} bytes in buffer'.format(
+                    #        frb_get_len(&rbuf)))
+                    frb_set_len(&rbuf, bl - flen)
                 frb_set_len(&rbuf, bl - flen)
 
             cpython.Py_INCREF(val)

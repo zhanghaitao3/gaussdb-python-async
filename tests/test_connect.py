@@ -2165,7 +2165,7 @@ class TestConnectionGC(tb.ClusterTestCase):
                     ResourceWarning,
                     r'unclosed connection.*run in asyncio debug'):
                 await self._run_no_explicit_close_test()
-                
+
         finally:
             self.loop.set_debug(olddebug)
 
@@ -2184,6 +2184,7 @@ class TestConnectionGC(tb.ClusterTestCase):
             self.loop.set_debug(olddebug)
 
 
+@unittest.skip("Skip cluster tests that require postgres executable")
 class TestConnectionAttributes(tb.HotStandbyTestCase):
 
     async def _run_connection_test(
