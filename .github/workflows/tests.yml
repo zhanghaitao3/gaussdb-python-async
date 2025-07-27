@@ -46,7 +46,7 @@ jobs:
       with:
         github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
         missing_version_ok: yes
-        version_file: asyncpg/_version.py
+        version_file: async_gaussdb/_version.py
         version_line_pattern: |
           __version__(?:\s*:\s*typing\.Final)?\s*=\s*(?:['"])([[:PEP440:]])(?:['"])
 
@@ -101,7 +101,7 @@ jobs:
       with:
         github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
         missing_version_ok: yes
-        version_file: asyncpg/_version.py
+        version_file: async_gaussdb/_version.py
         version_line_pattern: |
           __version__(?:\s*:\s*typing\.Final)?\s*=\s*(?:['"])([[:PEP440:]])(?:['"])
 

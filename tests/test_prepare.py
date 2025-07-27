@@ -6,12 +6,12 @@
 
 
 import asyncio
-import asyncpg
+import async_gaussdb
 import gc
 import unittest
 
-from asyncpg import _testbase as tb
-from asyncpg import exceptions
+from async_gaussdb import _testbase as tb
+from async_gaussdb import exceptions
 
 
 class TestPrepare(tb.ConnectedTestCase):
@@ -94,7 +94,7 @@ class TestPrepare(tb.ConnectedTestCase):
         await self.con.close()
         self.assertTrue(self.con.is_closed())
 
-        with self.assertRaises(asyncpg.QueryCanceledError):
+        with self.assertRaises(async_gaussdb.QueryCanceledError):
             await fut
 
         # Test that it's OK to call close again
@@ -110,7 +110,7 @@ class TestPrepare(tb.ConnectedTestCase):
         self.con.terminate()
         self.assertTrue(self.con.is_closed())
 
-        with self.assertRaisesRegex(asyncpg.ConnectionDoesNotExistError,
+        with self.assertRaisesRegex(async_gaussdb.ConnectionDoesNotExistError,
                                     'closed in the middle'):
             await fut
 
@@ -137,7 +137,7 @@ class TestPrepare(tb.ConnectedTestCase):
         $$;""".format(msg)
 
         stmt = await self.con.prepare(query)
-        with self.assertRaisesRegex(asyncpg.RaiseError, msg):
+        with self.assertRaisesRegex(async_gaussdb.RaiseError, msg):
             with tb.silence_asyncio_long_exec_warning():
                 await stmt.fetchval()
 
@@ -191,7 +191,7 @@ class TestPrepare(tb.ConnectedTestCase):
 
         # An attempt to perform an operation on a closed statement
         # will trigger an error.
-        with self.assertRaisesRegex(asyncpg.InterfaceError, 'is closed'):
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError, 'is closed'):
             await zero.fetchval()
 
     async def test_prepare_11_stmt_gc(self):
@@ -341,7 +341,7 @@ class TestPrepare(tb.ConnectedTestCase):
     async def test_prepare_17_stmt_closed_lru(self):
         st = await self.con.prepare('SELECT 1')
         st._state.mark_closed()
-        with self.assertRaisesRegex(asyncpg.InterfaceError, 'is closed'):
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError, 'is closed'):
             await st.fetch()
 
         st = await self.con.prepare('SELECT 1')
@@ -366,7 +366,7 @@ class TestPrepare(tb.ConnectedTestCase):
         # prepared (!) and is now awaiting the results (!!).
         await asyncio.sleep(0.01)
 
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'another operation'):
             await self.con.execute('SELECT 2')
 
@@ -388,7 +388,7 @@ class TestPrepare(tb.ConnectedTestCase):
 
                 await asyncio.sleep(0.01)
 
-                with self.assertRaisesRegex(asyncpg.InterfaceError,
+                with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                             'another operation'):
                     await meth('SELECT 2')
 
@@ -397,16 +397,16 @@ class TestPrepare(tb.ConnectedTestCase):
     async def test_prepare_21_errors(self):
         stmt = await self.con.prepare('SELECT 10 / $1::int')
 
-        with self.assertRaises(asyncpg.DivisionByZeroError):
+        with self.assertRaises(async_gaussdb.DivisionByZeroError):
             await stmt.fetchval(0)
 
         self.assertEqual(await stmt.fetchval(5), 2)
 
     async def test_prepare_22_empty(self):
-        # Support for empty target list was added in PostgreSQL 9.4
+        # Support for empty target list was added in GaussDBSQL 9.4
         if self.server_version < (9, 4):
             raise unittest.SkipTest(
-                'PostgreSQL servers < 9.4 do not support empty target list.')
+                'GaussDBSQL servers < 9.4 do not support empty target list.')
 
         result = await self.con.fetchrow('SELECT')
         self.assertEqual(result, ())
@@ -425,8 +425,8 @@ class TestPrepare(tb.ConnectedTestCase):
 
             # openGauss may throw different error types for cached plan issues
             with self.assertRaises((
-                asyncpg.InvalidCachedStatementError,
-                asyncpg.UnknownPostgresError
+                async_gaussdb.InvalidCachedStatementError,
+                async_gaussdb.UnknownGaussDBError
             )):
                 await stmt.fetchrow()
 
@@ -580,8 +580,8 @@ class TestPrepare(tb.ConnectedTestCase):
                         'duplicate statement' USING ERRCODE = '42P05';
                 END; $$ LANGUAGE plpgsql;
             """)
-        except asyncpg.DuplicatePreparedStatementError as e:
-            self.assertTrue('pgbouncer' in e.hint)
+        except async_gaussdb.DuplicatePreparedStatementError as e:
+            self.assertTrue('gsbouncer' in e.hint)
         else:
             self.fail('DuplicatePreparedStatementError not raised')
 
@@ -592,8 +592,8 @@ class TestPrepare(tb.ConnectedTestCase):
                         'invalid statement' USING ERRCODE = '26000';
                 END; $$ LANGUAGE plpgsql;
             """)
-        except asyncpg.InvalidSQLStatementNameError as e:
-            self.assertTrue('pgbouncer' in e.hint)
+        except async_gaussdb.InvalidSQLStatementNameError as e:
+            self.assertTrue('gsbouncer' in e.hint)
         else:
             self.fail('InvalidSQLStatementNameError not raised')
 

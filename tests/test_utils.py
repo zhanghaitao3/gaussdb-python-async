@@ -7,8 +7,8 @@
 
 import datetime
 
-from asyncpg import utils
-from asyncpg import _testbase as tb
+from async_gaussdb import utils
+from async_gaussdb import _testbase as tb
 
 
 class TestUtils(tb.ConnectedTestCase):

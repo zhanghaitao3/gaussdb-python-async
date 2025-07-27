@@ -1,21 +1,21 @@
-.. _asyncpg-installation:
+.. _async_gaussdb-installation:
 
 
 Installation
 ============
 
-**asyncpg** has no external dependencies when not using GSSAPI/SSPI
+**async_gaussdb** has no external dependencies when not using GSSAPI/SSPI
 authentication.  The recommended way to install it is to use **pip**:
 
 .. code-block:: bash
 
-    $ pip install asyncpg
+    $ pip install async_gaussdb
 
 If you need GSSAPI/SSPI authentication, the recommended way is to use
 
 .. code-block:: bash
 
-    $ pip install 'asyncpg[gssauth]'
+    $ pip install 'async_gaussdb[gssauth]'
 
 This installs SSPI support on Windows and GSSAPI support on non-Windows
 platforms.  SSPI and GSSAPI interoperate as clients and servers: an SSPI
@@ -38,7 +38,7 @@ It is also possible to use GSSAPI on Windows:
 Building from source
 --------------------
 
-If you want to build **asyncpg** from a Git checkout you will need:
+If you want to build **async_gaussdb** from a Git checkout you will need:
 
   * To have cloned the repo with `--recurse-submodules`.
   * A working C compiler.
@@ -54,11 +54,11 @@ in the root of the source checkout:
     $ pip install -e .
 
 A debug build containing more runtime checks can be created by setting
-the ``ASYNCPG_DEBUG`` environment variable when building:
+the ``async_gaussdb_DEBUG`` environment variable when building:
 
 .. code-block:: bash
 
-    $ env ASYNCPG_DEBUG=1 pip install -e .
+    $ env async_gaussdb_DEBUG=1 pip install -e .
 
 
 Running tests

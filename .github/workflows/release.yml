@@ -7,7 +7,7 @@ on:
       - "ci"
       - "[0-9]+.[0-9x]+*"
     paths:
-      - "asyncpg/_version.py"
+      - "async_gaussdb/_version.py"
 
 jobs:
   validate-release-request:
@@ -20,7 +20,7 @@ jobs:
         require_team: Release Managers
         require_approval: no
         github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
-        version_file: asyncpg/_version.py
+        version_file: async_gaussdb/_version.py
         version_line_pattern: |
           __version__(?:\s*:\s*typing\.Final)?\s*=\s*(?:['"])([[:PEP440:]])(?:['"])
 
@@ -192,7 +192,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/asyncpg
+      url: https://pypi.org/p/async_gaussdb
     permissions:
       id-token: write
       attestations: write

@@ -5,10 +5,10 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
-import asyncpg
+import async_gaussdb
 import unittest
 
-from asyncpg import _testbase as tb
+from async_gaussdb import _testbase as tb
 
 
 class TestTransaction(tb.ConnectedTestCase):
@@ -39,7 +39,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertIsNone(self.con._top_xact)
         self.assertFalse(self.con.is_in_transaction())
 
-        with self.assertRaisesRegex(asyncpg.PostgresError,
+        with self.assertRaisesRegex(async_gaussdb.GaussDBError,
                                     '"mytab" does not exist'):
             await self.con.prepare('''
                 SELECT * FROM mytab
@@ -105,7 +105,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertIs(self.con._top_xact, None)
         self.assertFalse(self.con.is_in_transaction())
 
-        with self.assertRaisesRegex(asyncpg.PostgresError,
+        with self.assertRaisesRegex(async_gaussdb.GaussDBError,
                                     '"mytab" does not exist'):
             await self.con.prepare('''
                 SELECT * FROM mytab
@@ -116,18 +116,18 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertFalse(self.con.is_in_transaction())
 
         tr = self.con.transaction(readonly=True, isolation='serializable')
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'cannot start; .* already started'):
             async with tr:
                 await tr.start()
 
         self.assertTrue(repr(tr).startswith(
-            '<asyncpg.Transaction state:rolledback serializable readonly'))
+            '<async_gaussdb.Transaction state:rolledback serializable readonly'))
 
         self.assertIsNone(self.con._top_xact)
         self.assertFalse(self.con.is_in_transaction())
 
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'cannot start; .* already rolled back'):
             async with tr:
                 pass
@@ -136,7 +136,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertFalse(self.con.is_in_transaction())
 
         tr = self.con.transaction()
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'cannot manually commit.*async with'):
             async with tr:
                 await tr.commit()
@@ -145,7 +145,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertFalse(self.con.is_in_transaction())
 
         tr = self.con.transaction()
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'cannot manually rollback.*async with'):
             async with tr:
                 await tr.rollback()
@@ -154,7 +154,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertFalse(self.con.is_in_transaction())
 
         tr = self.con.transaction()
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'cannot enter context:.*async with'):
             async with tr:
                 async with tr:
@@ -171,7 +171,7 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertIsNone(self.con._top_xact)
         self.assertTrue(self.con.is_in_transaction())
 
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'cannot use Connection.transaction'):
             await tr.start()
 
@@ -214,7 +214,9 @@ class TestTransaction(tb.ConnectedTestCase):
                         )
                     await self.con.reset()
 
-    @unittest.skip('openGauss handles nested transaction isolation levels differently from PostgreSQL; cannot assert unified behavior.')
+    @unittest.skip("""GaussDB handles nested transaction
+                      isolation levels differently from GaussDBSQL;
+                      cannot assert unified behavior.""")
     async def test_nested_isolation_level(self):
         set_sql = 'SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL '
         isolation_levels = {
@@ -238,7 +240,7 @@ class TestTransaction(tb.ConnectedTestCase):
                         async with self.con.transaction(isolation=outer_level):
                             if inner and outer != inner:
                                 with self.assertRaisesRegex(
-                                    asyncpg.InterfaceError,
+                                    async_gaussdb.InterfaceError,
                                     'nested transaction has a different '
                                     'isolation level: current {!r} != '
                                     'outer {!r}'.format(inner, outer)

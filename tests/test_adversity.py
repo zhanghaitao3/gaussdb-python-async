@@ -4,14 +4,14 @@
 # This module is part of asyncpg and is released under
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
-"""Tests how asyncpg behaves in non-ideal conditions."""
+"""Tests how async_gaussdb behaves in non-ideal conditions."""
 
 import asyncio
 import os
 import platform
 import unittest
 
-from asyncpg import _testbase as tb
+from async_gaussdb import _testbase as tb
 
 
 @unittest.skipIf(os.environ.get('PGHOST'), 'using remote cluster for testing')

@@ -26,14 +26,14 @@ import weakref
 
 import distro
 
-import asyncpg
-from asyncpg import _testbase as tb
-from asyncpg import connection as pg_connection
-from asyncpg import connect_utils
-from asyncpg import cluster as pg_cluster
-from asyncpg import exceptions
-from asyncpg.connect_utils import SSLMode
-from asyncpg.serverversion import split_server_version_string
+import async_gaussdb
+from async_gaussdb import _testbase as tb
+from async_gaussdb import connection as pg_connection
+from async_gaussdb import connect_utils
+from async_gaussdb import cluster as pg_cluster
+from async_gaussdb import exceptions
+from async_gaussdb.connect_utils import SSLMode
+from async_gaussdb.serverversion import split_server_version_string
 
 _system = platform.uname().system
 
@@ -57,24 +57,24 @@ else:
 
 
 @contextlib.contextmanager
-def mock_dot_postgresql(*, ca=True, crl=False, client=False, protected=False):
+def mock_dot_gaussdb(*, ca=True, crl=False, client=False, protected=False):
     with tempfile.TemporaryDirectory() as temp_dir:
         home = pathlib.Path(temp_dir)
-        pg_home = home / '.postgresql'
+        pg_home = home / '.gaussdb'
         pg_home.mkdir()
         if ca:
             shutil.copyfile(SSL_CA_CERT_FILE, pg_home / 'root.crt')
         if crl:
             shutil.copyfile(SSL_CA_CRL_FILE, pg_home / 'root.crl')
         if client:
-            shutil.copyfile(CLIENT_SSL_CERT_FILE, pg_home / 'postgresql.crt')
+            shutil.copyfile(CLIENT_SSL_CERT_FILE, pg_home / 'gaussdb.crt')
             if protected:
                 shutil.copyfile(
-                    CLIENT_SSL_PROTECTED_KEY_FILE, pg_home / 'postgresql.key'
+                    CLIENT_SSL_PROTECTED_KEY_FILE, pg_home / 'gaussdb.key'
                 )
             else:
                 shutil.copyfile(
-                    CLIENT_SSL_KEY_FILE, pg_home / 'postgresql.key'
+                    CLIENT_SSL_KEY_FILE, pg_home / 'gaussdb.key'
                 )
         with unittest.mock.patch(
             'pathlib.Path.home', unittest.mock.Mock(return_value=home)
@@ -119,16 +119,16 @@ class TestSettings(tb.ConnectedTestCase):
     def test_server_version_02(self):
         versions = [
             ("9.2", (9, 2, 0, 'final', 0),),
-            ("Postgres-XL 9.2.1", (9, 2, 1, 'final', 0),),
+            ("GaussDB-XL 9.2.1", (9, 2, 1, 'final', 0),),
             ("9.4beta1", (9, 4, 0, 'beta', 1),),
             ("10devel", (10, 0, 0, 'devel', 0),),
             ("10beta2", (10, 0, 0, 'beta', 2),),
-            # For PostgreSQL versions >=10 we always
+            # For GaussDBSQL versions >=10 we always
             # set version.minor to 0.
             ("10.1", (10, 0, 1, 'final', 0),),
             ("11.1.2", (11, 0, 1, 'final', 0),),
-            ("PostgreSQL 10.1 (Debian 10.1-3)", (10, 0, 1, 'final', 0),),
-            ("PostgreSQL 11.2-YB-2.7.1.1-b0 on x86_64-pc-linux-gnu, "
+            ("GaussDBSQL 10.1 (Debian 10.1-3)", (10, 0, 1, 'final', 0),),
+            ("GaussDBSQL 11.2-YB-2.7.1.1-b0 on x86_64-pc-linux-gnu, "
              "compiled by gcc (Homebrew gcc 5.5.0_4) 5.5.0, 64-bit",
              (11, 0, 2, "final", 0),),
         ]
@@ -233,14 +233,14 @@ class TestAuthentication(BaseTestAuthentication):
             for tried in range(3):
                 try:
                     return await self.connect(**kwargs)
-                except asyncpg.ConnectionDoesNotExistError:
+                except async_gaussdb.ConnectionDoesNotExistError:
                     pass
 
         return await self.connect(**kwargs)
 
     async def test_auth_bad_user(self):
         with self.assertRaises(
-                asyncpg.InvalidAuthorizationSpecificationError):
+                async_gaussdb.InvalidAuthorizationSpecificationError):
             await self._try_connect(user='__nonexistent__')
 
     async def test_auth_trust(self):
@@ -249,7 +249,7 @@ class TestAuthentication(BaseTestAuthentication):
 
     async def test_auth_reject(self):
         with self.assertRaisesRegex(
-                asyncpg.InvalidAuthorizationSpecificationError,
+                async_gaussdb.InvalidAuthorizationSpecificationError,
                 'pg_hba.conf rejects connection'):
             await self._try_connect(user='reject_user')
 
@@ -260,7 +260,7 @@ class TestAuthentication(BaseTestAuthentication):
         await conn.close()
 
         with self.assertRaisesRegex(
-                asyncpg.InvalidPasswordError,
+                async_gaussdb.InvalidPasswordError,
                 'password authentication failed for user "password_user"'):
             await self._try_connect(
                 user='password_user',
@@ -279,7 +279,7 @@ class TestAuthentication(BaseTestAuthentication):
         await conn.close()
 
         with self.assertRaisesRegex(
-                asyncpg.InvalidPasswordError,
+                async_gaussdb.InvalidPasswordError,
                 'password authentication failed for user "password_user"'):
             await self._try_connect(
                 user='password_user',
@@ -298,7 +298,7 @@ class TestAuthentication(BaseTestAuthentication):
         await conn.close()
 
         with self.assertRaisesRegex(
-                asyncpg.InvalidPasswordError,
+                async_gaussdb.InvalidPasswordError,
                 'password authentication failed for user "password_user"'):
             await self._try_connect(
                 user='password_user',
@@ -317,7 +317,7 @@ class TestAuthentication(BaseTestAuthentication):
         await conn.close()
 
         with self.assertRaisesRegex(
-                asyncpg.InvalidPasswordError,
+                async_gaussdb.InvalidPasswordError,
                 'password authentication failed for user "password_user"'):
             await self._try_connect(
                 user='password_user',
@@ -329,13 +329,13 @@ class TestAuthentication(BaseTestAuthentication):
         await conn.close()
 
         with self.assertRaisesRegex(
-                asyncpg.InvalidPasswordError,
+                async_gaussdb.InvalidPasswordError,
                 'password authentication failed for user "md5_user"'):
             await self._try_connect(
                 user='md5_user', password='wrongpassword')
 
     async def test_auth_password_scram_sha_256(self):
-        # scram is only supported in PostgreSQL 10 and above
+        # scram is only supported in GaussDBSQL 10 and above
         if self.server_version.major < 10:
             return
 
@@ -344,7 +344,7 @@ class TestAuthentication(BaseTestAuthentication):
         await conn.close()
 
         with self.assertRaisesRegex(
-                asyncpg.InvalidPasswordError,
+                async_gaussdb.InvalidPasswordError,
                 'password authentication failed for user "scram_sha_256_user"'
         ):
             await self._try_connect(
@@ -392,7 +392,7 @@ class TestAuthentication(BaseTestAuthentication):
 
 @unittest.skipIf(
     distro.id() == "alpine",
-    "Alpine Linux ships PostgreSQL without GSS auth support",
+    "Alpine Linux ships GaussDBSQL without GSS auth support",
 )
 class TestGssAuthentication(BaseTestAuthentication):
     @classmethod
@@ -409,8 +409,8 @@ class TestGssAuthentication(BaseTestAuthentication):
         patch.start()
         cls.addClassCleanup(patch.stop)
         # Add credentials.
-        cls.realm.addprinc('postgres/localhost')
-        cls.realm.extract_keytab('postgres/localhost', cls.realm.keytab)
+        cls.realm.addprinc('gaussdb/localhost')
+        cls.realm.extract_keytab('gaussdb/localhost', cls.realm.keytab)
 
         cls.USERS = [
             (cls.realm.user_princ, 'gss', None),
@@ -531,7 +531,7 @@ class TestConnectParams(tb.TestCase):
                 'PGSSLMODE': 'allow'
             },
 
-            'dsn': 'postgres://user3:123123@localhost/abcdef',
+            'dsn': 'gaussdb://user3:123123@localhost/abcdef',
 
             'host': 'host2',
             'port': '456',
@@ -560,7 +560,7 @@ class TestConnectParams(tb.TestCase):
                 'PGSSLMODE': 'allow'
             },
 
-            'dsn': 'postgres://user3:123123@localhost:5555/abcdef',
+            'dsn': 'gaussdb://user3:123123@localhost:5555/abcdef',
 
             'result': ([('localhost', 5555)], {
                 'user': 'user3',
@@ -582,7 +582,7 @@ class TestConnectParams(tb.TestCase):
                 'PGSSLMODE': 'prefer'
             },
 
-            'dsn': 'postgres://user3:123123@localhost/abcdef',
+            'dsn': 'gaussdb://user3:123123@localhost/abcdef',
 
             'host': 'host2',
             'port': '456',
@@ -603,10 +603,10 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_ssl_negotiation_dsn',
             'env': {
-                'PGSSLNEGOTIATION': 'postgres'
+                'PGSSLNEGOTIATION': 'gaussdb'
             },
 
-            'dsn': 'postgres://u:p@localhost/d?sslnegotiation=direct',
+            'dsn': 'gaussdb://u:p@localhost/d?sslnegotiation=direct',
 
             'result': ([('localhost', 5432)], {
                 'user': 'u',
@@ -623,7 +623,7 @@ class TestConnectParams(tb.TestCase):
                 'PGSSLNEGOTIATION': 'direct'
             },
 
-            'dsn': 'postgres://u:p@localhost/d',
+            'dsn': 'gaussdb://u:p@localhost/d',
 
             'result': ([('localhost', 5432)], {
                 'user': 'u',
@@ -640,14 +640,14 @@ class TestConnectParams(tb.TestCase):
                 'PGSSLNEGOTIATION': 'direct'
             },
 
-            'dsn': 'postgres://u:p@localhost/d',
+            'dsn': 'gaussdb://u:p@localhost/d',
             'direct_tls': False,
 
             'result': ([('localhost', 5432)], {
                 'user': 'u',
                 'password': 'p',
                 'database': 'd',
-                'ssl_negotiation': 'postgres',
+                'ssl_negotiation': 'gaussdb',
                 'target_session_attrs': 'any',
             })
         },
@@ -663,7 +663,7 @@ class TestConnectParams(tb.TestCase):
                 'PGSSLMODE': 'prefer'
             },
 
-            'dsn': 'postgres://user3:123123@localhost:5555/abcdef',
+            'dsn': 'gaussdb://user3:123123@localhost:5555/abcdef',
 
             'result': ([('localhost', 5555)], {
                 'user': 'user3',
@@ -676,7 +676,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only',
-            'dsn': 'postgres://user3:123123@localhost:5555/abcdef',
+            'dsn': 'gaussdb://user3:123123@localhost:5555/abcdef',
             'result': ([('localhost', 5555)], {
                 'user': 'user3',
                 'password': '123123',
@@ -686,7 +686,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only_multi_host',
-            'dsn': 'postgresql://user@host1,host2/db',
+            'dsn': 'gaussdb://user@host1,host2/db',
             'result': ([('host1', 5432), ('host2', 5432)], {
                 'database': 'db',
                 'user': 'user',
@@ -696,7 +696,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only_multi_host_and_port',
-            'dsn': 'postgresql://user@host1:1111,host2:2222/db',
+            'dsn': 'gaussdb://user@host1:1111,host2:2222/db',
             'result': ([('host1', 1111), ('host2', 2222)], {
                 'database': 'db',
                 'user': 'user',
@@ -706,7 +706,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'target_session_attrs',
-            'dsn': 'postgresql://user@host1:1111,host2:2222/db'
+            'dsn': 'gaussdb://user@host1:1111,host2:2222/db'
                    '?target_session_attrs=read-only',
             'result': ([('host1', 1111), ('host2', 2222)], {
                 'database': 'db',
@@ -717,7 +717,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'target_session_attrs_2',
-            'dsn': 'postgresql://user@host1:1111,host2:2222/db'
+            'dsn': 'gaussdb://user@host1:1111,host2:2222/db'
                    '?target_session_attrs=read-only',
             'target_session_attrs': 'read-write',
             'result': ([('host1', 1111), ('host2', 2222)], {
@@ -729,7 +729,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'target_session_attrs_3',
-            'dsn': 'postgresql://user@host1:1111,host2:2222/db',
+            'dsn': 'gaussdb://user@host1:1111,host2:2222/db',
             'env': {
                 'PGTARGETSESSIONATTRS': 'read-only',
             },
@@ -742,7 +742,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'krbsrvname',
-            'dsn': 'postgresql://user@host/db?krbsrvname=srv_qs',
+            'dsn': 'gaussdb://user@host/db?krbsrvname=srv_qs',
             'env': {
                 'PGKRBSRVNAME': 'srv_env',
             },
@@ -756,7 +756,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'krbsrvname_2',
-            'dsn': 'postgresql://user@host/db?krbsrvname=srv_qs',
+            'dsn': 'gaussdb://user@host/db?krbsrvname=srv_qs',
             'krbsrvname': 'srv_kws',
             'env': {
                 'PGKRBSRVNAME': 'srv_env',
@@ -771,7 +771,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'krbsrvname_3',
-            'dsn': 'postgresql://user@host/db',
+            'dsn': 'gaussdb://user@host/db',
             'env': {
                 'PGKRBSRVNAME': 'srv_env',
             },
@@ -785,7 +785,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'gsslib',
-            'dsn': f'postgresql://user@host/db?gsslib={OTHER_GSSLIB}',
+            'dsn': f'gaussdb://user@host/db?gsslib={OTHER_GSSLIB}',
             'env': {
                 'PGGSSLIB': 'ignored',
             },
@@ -799,7 +799,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'gsslib_2',
-            'dsn': 'postgresql://user@host/db?gsslib=ignored',
+            'dsn': 'gaussdb://user@host/db?gsslib=ignored',
             'gsslib': OTHER_GSSLIB,
             'env': {
                 'PGGSSLIB': 'ignored',
@@ -814,7 +814,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'gsslib_3',
-            'dsn': 'postgresql://user@host/db',
+            'dsn': 'gaussdb://user@host/db',
             'env': {
                 'PGGSSLIB': OTHER_GSSLIB,
             },
@@ -828,7 +828,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'gsslib_4',
-            'dsn': 'postgresql://user@host/db',
+            'dsn': 'gaussdb://user@host/db',
             'result': ([('host', 5432)], {
                 'database': 'db',
                 'user': 'user',
@@ -839,7 +839,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'gsslib_5',
-            'dsn': 'postgresql://user@host/db?gsslib=invalid',
+            'dsn': 'gaussdb://user@host/db?gsslib=invalid',
             'error': (
                 exceptions.ClientConfigurationError,
                 "gsslib parameter must be either 'gssapi' or 'sspi'"
@@ -849,7 +849,7 @@ class TestConnectParams(tb.TestCase):
         # broken by https://github.com/python/cpython/pull/129418
         # {
         #     'name': 'dsn_ipv6_multi_host',
-        #     'dsn': 'postgresql://user@[2001:db8::1234%25eth0],[::1]/db',
+        #     'dsn': 'gaussdb://user@[2001:db8::1234%25eth0],[::1]/db',
         #     'result': ([('2001:db8::1234%eth0', 5432), ('::1', 5432)], {
         #         'database': 'db',
         #         'user': 'user',
@@ -859,7 +859,7 @@ class TestConnectParams(tb.TestCase):
 
         # {
         #     'name': 'dsn_ipv6_multi_host_port',
-        #     'dsn': 'postgresql://user@[2001:db8::1234]:1111,[::1]:2222/db',
+        #     'dsn': 'gaussdb://user@[2001:db8::1234]:1111,[::1]:2222/db',
         #     'result': ([('2001:db8::1234', 1111), ('::1', 2222)], {
         #         'database': 'db',
         #         'user': 'user',
@@ -869,7 +869,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_ipv6_multi_host_query_part',
-            'dsn': 'postgresql:///db?user=user&host=[2001:db8::1234],[::1]',
+            'dsn': 'gaussdb:///db?user=user&host=[2001:db8::1234],[::1]',
             'result': ([('2001:db8::1234', 5432), ('::1', 5432)], {
                 'database': 'db',
                 'user': 'user',
@@ -884,7 +884,7 @@ class TestConnectParams(tb.TestCase):
                 'PGHOST': 'host1:1111,host2:2222',
                 'PGUSER': 'foo',
             },
-            'dsn': 'postgresql:///db',
+            'dsn': 'gaussdb:///db',
             'result': ([('host1', 1111), ('host2', 2222)], {
                 'database': 'db',
                 'user': 'foo',
@@ -897,7 +897,7 @@ class TestConnectParams(tb.TestCase):
             'env': {
                 'PGUSER': 'foo',
             },
-            'dsn': 'postgresql:///db?host=host1:1111,host2:2222',
+            'dsn': 'gaussdb:///db?host=host1:1111,host2:2222',
             'result': ([('host1', 1111), ('host2', 2222)], {
                 'database': 'db',
                 'user': 'foo',
@@ -910,7 +910,7 @@ class TestConnectParams(tb.TestCase):
             'env': {
                 'PGUSER': 'foo',
             },
-            'dsn': 'postgresql:///db',
+            'dsn': 'gaussdb:///db',
             'host': ['host1', 'host2'],
             'result': ([('host1', 5432), ('host2', 5432)], {
                 'database': 'db',
@@ -923,7 +923,7 @@ class TestConnectParams(tb.TestCase):
             'env': {
                 'PGUSER': 'foo',
             },
-            'dsn': 'postgresql:///db',
+            'dsn': 'gaussdb:///db',
             'host': ('host1', 'host2'),
             'result': ([('host1', 5432), ('host2', 5432)], {
                 'database': 'db',
@@ -934,7 +934,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'params_combine_dsn_settings_override_and_ssl',
-            'dsn': 'postgresql://user3:123123@localhost:5555/'
+            'dsn': 'gaussdb://user3:123123@localhost:5555/'
                    'abcdef?param=sss&param=123&host=testhost&user=testuser'
                    '&port=2222&database=testdb&sslmode=require',
             'host': '127.0.0.1',
@@ -954,7 +954,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'params_settings_and_ssl_override_dsn',
-            'dsn': 'postgresql://user3:123123@localhost:5555/'
+            'dsn': 'gaussdb://user3:123123@localhost:5555/'
                    'abcdef?param=sss&param=123&host=testhost&user=testuser'
                    '&port=2222&database=testdb&sslmode=disable',
             'host': '127.0.0.1',
@@ -976,7 +976,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only_unix',
-            'dsn': 'postgresql:///dbname?host=/unix_sock/test&user=spam',
+            'dsn': 'gaussdb:///dbname?host=/unix_sock/test&user=spam',
             'result': ([os.path.join('/unix_sock/test', '.s.PGSQL.5432')], {
                 'user': 'spam',
                 'database': 'dbname',
@@ -985,7 +985,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only_quoted',
-            'dsn': 'postgresql://us%40r:p%40ss@h%40st1,h%40st2:543%33/d%62',
+            'dsn': 'gaussdb://us%40r:p%40ss@h%40st1,h%40st2:543%33/d%62',
             'result': (
                 [('h@st1', 5432), ('h@st2', 5433)],
                 {
@@ -999,7 +999,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only_unquoted_host',
-            'dsn': 'postgresql://user:p@ss@host/db',
+            'dsn': 'gaussdb://user:p@ss@host/db',
             'result': (
                 [('ss@host', 5432)],
                 {
@@ -1013,7 +1013,7 @@ class TestConnectParams(tb.TestCase):
 
         {
             'name': 'dsn_only_quoted_params',
-            'dsn': 'postgresql:///d%62?user=us%40r&host=h%40st&port=543%33',
+            'dsn': 'gaussdb:///d%62?user=us%40r&host=h%40st&port=543%33',
             'result': (
                 [('h@st', 5433)],
                 {
@@ -1031,7 +1031,7 @@ class TestConnectParams(tb.TestCase):
         },
         {
             'name': 'dsn_params_ports_mismatch_dsn_multi_hosts',
-            'dsn': 'postgresql://host1,host2,host3/db',
+            'dsn': 'gaussdb://host1,host2,host3/db',
             'port': [111, 222],
             'error': (
                 exceptions.InterfaceError,
@@ -1040,7 +1040,7 @@ class TestConnectParams(tb.TestCase):
         },
         {
             'name': 'dsn_only_quoted_unix_host_port_in_params',
-            'dsn': 'postgres://user@?port=56226&host=%2Ftmp',
+            'dsn': 'gaussdb://user@?port=56226&host=%2Ftmp',
             'result': (
                 [os.path.join('/tmp', '.s.PGSQL.56226')],
                 {
@@ -1054,7 +1054,7 @@ class TestConnectParams(tb.TestCase):
         },
         {
             'name': 'dsn_only_cloudsql',
-            'dsn': 'postgres:///db?host=/cloudsql/'
+            'dsn': 'gaussdb:///db?host=/cloudsql/'
                    'project:region:instance-name&user=spam',
             'result': (
                 [os.path.join(
@@ -1069,7 +1069,7 @@ class TestConnectParams(tb.TestCase):
         },
         {
             'name': 'dsn_only_cloudsql_unix_and_tcp',
-            'dsn': 'postgres:///db?host=127.0.0.1:5432,/cloudsql/'
+            'dsn': 'gaussdb:///db?host=127.0.0.1:5432,/cloudsql/'
                    'project:region:instance-name,localhost:5433&user=spam',
             'result': (
                 [
@@ -1090,7 +1090,7 @@ class TestConnectParams(tb.TestCase):
         },
         {
             'name': 'multi_host_single_port',
-            'dsn': 'postgres:///postgres?host=127.0.0.1,127.0.0.2&port=5432'
+            'dsn': 'gaussdb:///postgres?host=127.0.0.1,127.0.0.2&port=5432'
                    '&user=postgres',
             'result': (
                 [
@@ -1203,7 +1203,6 @@ class TestConnectParams(tb.TestCase):
                 # Avoid the hassle of specifying gsslib
                 # unless explicitly tested for
                 params.pop('gsslib', None)
-
             self.assertEqual(expected, result, 'Testcase: {}'.format(testcase))
 
     def test_test_connect_params_environ(self):
@@ -1306,7 +1305,7 @@ class TestConnectParams(tb.TestCase):
 
             # passfile path in dsn
             self.run_testcase({
-                'dsn': 'postgres://user@abc/db?passfile={}'.format(
+                'dsn': 'gaussdb://user@abc/db?passfile={}'.format(
                     passfile.name),
                 'result': (
                     [('abc', 5432)],
@@ -1537,14 +1536,14 @@ class TestConnectParams(tb.TestCase):
     async def test_connect_args_validation(self):
         for val in {-1, 'a', True, False, 0}:
             with self.assertRaisesRegex(ValueError, 'greater than 0'):
-                await asyncpg.connect(command_timeout=val)
+                await async_gaussdb.connect(command_timeout=val)
 
         for arg in {'max_cacheable_statement_size',
                     'max_cached_statement_lifetime',
                     'statement_cache_size'}:
             for val in {None, -1, True, False}:
                 with self.assertRaisesRegex(ValueError, 'greater or equal'):
-                    await asyncpg.connect(**{arg: val})
+                    await async_gaussdb.connect(**{arg: val})
 
 
 class TestConnection(tb.ConnectedTestCase):
@@ -1556,7 +1555,7 @@ class TestConnection(tb.ConnectedTestCase):
 
     async def test_connection_use_after_close(self):
         def check():
-            return self.assertRaisesRegex(asyncpg.InterfaceError,
+            return self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                           'connection is closed')
 
         await self.con.close()
@@ -1602,7 +1601,7 @@ class TestConnection(tb.ConnectedTestCase):
             con = None
             try:
                 con = await self.connect(
-                    dsn='postgresql://foo/?sslmode=' + sslmode,
+                    dsn='gaussdb://foo/?sslmode=' + sslmode,
                     user='postgres',
                     database='postgres',
                     host='localhost')
@@ -1617,7 +1616,7 @@ class TestConnection(tb.ConnectedTestCase):
             try:
                 with self.assertRaises(ConnectionError):
                     con = await self.connect(
-                        dsn='postgresql://foo/?sslmode=' + sslmode,
+                        dsn='gaussdb://foo/?sslmode=' + sslmode,
                         user='postgres',
                         database='postgres',
                         host='localhost')
@@ -1630,14 +1629,14 @@ class TestConnection(tb.ConnectedTestCase):
         await verify_works('allow')
         await verify_works('prefer')
         await verify_fails('require')
-        with mock_dot_postgresql():
+        with mock_dot_gaussdb():
             await verify_fails('require')
             await verify_fails('verify-ca')
             await verify_fails('verify-full')
 
     async def test_connection_implicit_host(self):
         conn_spec = self.get_connection_spec()
-        con = await asyncpg.connect(
+        con = await async_gaussdb.connect(
             port=conn_spec.get('port'),
             database=conn_spec.get('database'),
             user=conn_spec.get('user'))
@@ -1665,7 +1664,7 @@ class TestConnection(tb.ConnectedTestCase):
 
         with self.assertRaisesRegex(
             exceptions.ClientConfigurationError,
-            r'root certificate file "~/\.postgresql/root\.crt" does not exist'
+            r'root certificate file "~/\.gaussdb/root\.crt" does not exist'
         ):
             with mock_no_home_dir():
                 await self.connect(
@@ -1776,7 +1775,7 @@ class TestSSLConnection(BaseTestSSLConnection):
             con = None
             try:
                 con = await self.connect(
-                    dsn='postgresql://foo/postgres?sslmode=' + sslmode,
+                    dsn='gaussdb://foo/postgres?sslmode=' + sslmode,
                     host=host,
                     user='ssl_user')
                 self.assertEqual(await con.fetchval('SELECT 42'), 42)
@@ -1793,7 +1792,7 @@ class TestSSLConnection(BaseTestSSLConnection):
                 self.loop.set_exception_handler(lambda *args: None)
                 with self.assertRaises(exn_type):
                     con = await self.connect(
-                        dsn='postgresql://foo/?sslmode=' + sslmode,
+                        dsn='gaussdb://foo/?sslmode=' + sslmode,
                         host=host,
                         user='ssl_user')
                     await con.fetchval('SELECT 42')
@@ -1802,7 +1801,7 @@ class TestSSLConnection(BaseTestSSLConnection):
                     await con.close()
                 self.loop.set_exception_handler(old_handler)
 
-        invalid_auth_err = asyncpg.InvalidAuthorizationSpecificationError
+        invalid_auth_err = async_gaussdb.InvalidAuthorizationSpecificationError
         await verify_fails('disable', exn_type=invalid_auth_err)
         await verify_works('allow')
         await verify_works('prefer')
@@ -1810,7 +1809,7 @@ class TestSSLConnection(BaseTestSSLConnection):
         await verify_fails('verify-ca', exn_type=ValueError)
         await verify_fails('verify-full', exn_type=ValueError)
 
-        with mock_dot_postgresql():
+        with mock_dot_gaussdb():
             await verify_works('require')
             await verify_works('verify-ca')
             await verify_works('verify-ca', host='127.0.0.1')
@@ -1818,7 +1817,7 @@ class TestSSLConnection(BaseTestSSLConnection):
             await verify_fails('verify-full', host='127.0.0.1',
                                exn_type=ssl.CertificateError)
 
-        with mock_dot_postgresql(crl=True):
+        with mock_dot_gaussdb(crl=True):
             await verify_fails('disable', exn_type=invalid_auth_err)
             await verify_works('allow')
             await verify_works('prefer')
@@ -1895,7 +1894,7 @@ class TestSSLConnection(BaseTestSSLConnection):
 
     async def test_tls_version(self):
         if self.cluster.get_pg_version() < (12, 0):
-            self.skipTest("PostgreSQL < 12 cannot set ssl protocol version")
+            self.skipTest("GaussDBSQL < 12 cannot set ssl protocol version")
 
         # XXX: uvloop artifact
         old_handler = self.loop.get_exception_handler()
@@ -1913,12 +1912,12 @@ class TestSSLConnection(BaseTestSSLConnection):
                     '(protocol version)|(handshake failure)',
                 ):
                     await self.connect(
-                        dsn='postgresql://ssl_user@localhost/postgres'
+                        dsn='gaussdb://ssl_user@localhost/postgres'
                             '?sslmode=require&ssl_min_protocol_version=TLSv1.3'
                     )
                 with self.assertRaises((ssl.SSLError, ConnectionResetError)):
                     await self.connect(
-                        dsn='postgresql://ssl_user@localhost/postgres'
+                        dsn='gaussdb://ssl_user@localhost/postgres'
                             '?sslmode=require'
                             '&ssl_min_protocol_version=TLSv1.1'
                             '&ssl_max_protocol_version=TLSv1.1'
@@ -1926,13 +1925,13 @@ class TestSSLConnection(BaseTestSSLConnection):
                 if not ssl.OPENSSL_VERSION.startswith('LibreSSL'):
                     with self.assertRaisesRegex(ssl.SSLError, 'no protocols'):
                         await self.connect(
-                            dsn='postgresql://ssl_user@localhost/postgres'
+                            dsn='gaussdb://ssl_user@localhost/postgres'
                                 '?sslmode=require'
                                 '&ssl_min_protocol_version=TLSv1.2'
                                 '&ssl_max_protocol_version=TLSv1.1'
                         )
                 con = await self.connect(
-                    dsn='postgresql://ssl_user@localhost/postgres'
+                    dsn='gaussdb://ssl_user@localhost/postgres'
                         '?sslmode=require'
                         '&ssl_min_protocol_version=TLSv1.2'
                         '&ssl_max_protocol_version=TLSv1.2'
@@ -2007,13 +2006,13 @@ class TestClientSSLConnection(BaseTestSSLConnection):
             'sslmode': 'verify-full',
         }
         params_str = urllib.parse.urlencode(params)
-        dsn = 'postgres://ssl_user@localhost/postgres?' + params_str
+        dsn = 'gaussdb://ssl_user@localhost/postgres?' + params_str
         await self._test_works(dsn=dsn)
 
         params['sslkey'] = CLIENT_SSL_PROTECTED_KEY_FILE
         params['sslpassword'] = 'secRet'
         params_str = urllib.parse.urlencode(params)
-        dsn = 'postgres://ssl_user@localhost/postgres?' + params_str
+        dsn = 'gaussdb://ssl_user@localhost/postgres?' + params_str
         await self._test_works(dsn=dsn)
 
     async def test_ssl_connection_client_auth_env(self):
@@ -2022,7 +2021,7 @@ class TestClientSSLConnection(BaseTestSSLConnection):
             'PGSSLCERT': CLIENT_SSL_CERT_FILE,
             'PGSSLKEY': CLIENT_SSL_KEY_FILE,
         }
-        dsn = 'postgres://ssl_user@localhost/postgres?sslmode=verify-full'
+        dsn = 'gaussdb://ssl_user@localhost/postgres?sslmode=verify-full'
         with unittest.mock.patch.dict('os.environ', env):
             await self._test_works(dsn=dsn)
 
@@ -2031,10 +2030,10 @@ class TestClientSSLConnection(BaseTestSSLConnection):
             await self._test_works(dsn=dsn + '&sslpassword=secRet')
 
     async def test_ssl_connection_client_auth_dot_postgresql(self):
-        dsn = 'postgres://ssl_user@localhost/postgres?sslmode=verify-full'
-        with mock_dot_postgresql(client=True):
+        dsn = 'gaussdb://ssl_user@localhost/postgres?sslmode=verify-full'
+        with mock_dot_gaussdb(client=True):
             await self._test_works(dsn=dsn)
-        with mock_dot_postgresql(client=True, protected=True):
+        with mock_dot_gaussdb(client=True, protected=True):
             await self._test_works(dsn=dsn + '&sslpassword=secRet')
 
 
@@ -2056,7 +2055,7 @@ class TestNoSSLConnection(BaseTestSSLConnection):
             con = None
             try:
                 con = await self.connect(
-                    dsn='postgresql://foo/postgres?sslmode=' + sslmode,
+                    dsn='gaussdb://foo/postgres?sslmode=' + sslmode,
                     host=host,
                     user='ssl_user')
                 self.assertEqual(await con.fetchval('SELECT 42'), 42)
@@ -2072,10 +2071,10 @@ class TestNoSSLConnection(BaseTestSSLConnection):
             try:
                 self.loop.set_exception_handler(lambda *args: None)
                 with self.assertRaises(
-                        asyncpg.InvalidAuthorizationSpecificationError
+                        async_gaussdb.InvalidAuthorizationSpecificationError
                 ):
                     con = await self.connect(
-                        dsn='postgresql://foo/?sslmode=' + sslmode,
+                        dsn='gaussdb://foo/?sslmode=' + sslmode,
                         host=host,
                         user='ssl_user')
                     await con.fetchval('SELECT 42')
@@ -2088,14 +2087,14 @@ class TestNoSSLConnection(BaseTestSSLConnection):
         await verify_works('allow')
         await verify_works('prefer')
         await verify_fails('require')
-        with mock_dot_postgresql():
+        with mock_dot_gaussdb():
             await verify_fails('require')
             await verify_fails('verify-ca')
             await verify_fails('verify-full')
 
     async def test_nossl_connection_prefer_cancel(self):
         con = await self.connect(
-            dsn='postgresql://foo/postgres?sslmode=prefer',
+            dsn='gaussdb://foo/postgres?sslmode=prefer',
             host='localhost',
             user='ssl_user')
         try:
@@ -2184,7 +2183,7 @@ class TestConnectionGC(tb.ClusterTestCase):
             self.loop.set_debug(olddebug)
 
 
-@unittest.skip("Skip cluster tests that require postgres executable")
+@unittest.skip("Skip cluster tests that require gaussdb executable")
 class TestConnectionAttributes(tb.HotStandbyTestCase):
 
     async def _run_connection_test(
@@ -2207,7 +2206,7 @@ class TestConnectionAttributes(tb.HotStandbyTestCase):
                 connect, target_attr, expected_port
             )
         if self.master_cluster.get_pg_version()[0] < 14:
-            self.skipTest("PostgreSQL<14 does not support these features")
+            self.skipTest("gaussdb<14 does not support these features")
         tests = [
             (self.connect_primary, 'read-write', master_port),
             (self.connect_standby, 'read-only', standby_port),
@@ -2229,7 +2228,7 @@ class TestConnectionAttributes(tb.HotStandbyTestCase):
                 await connect(target_session_attrs=target_attr)
 
         if self.master_cluster.get_pg_version()[0] < 14:
-            self.skipTest("PostgreSQL<14 does not support these features")
+            self.skipTest("gaussdb<14 does not support these features")
         tests = [
             (self.connect_standby, 'read-write'),
             (self.connect_primary, 'read-only'),

@@ -12,8 +12,8 @@ import os
 import tempfile
 import unittest
 
-import asyncpg
-from asyncpg import _testbase as tb
+import async_gaussdb
+from async_gaussdb import _testbase as tb
 
 
 class TestCopyFrom(tb.ConnectedTestCase):
@@ -29,7 +29,7 @@ class TestCopyFrom(tb.ConnectedTestCase):
         );
         INSERT INTO {table} (a, "b~", i) VALUES('*', NULL, NULL);
     ''')
-        count = await self.con.fetchval('SELECT COUNT(*) FROM public.copytab')
+        await self.con.fetchval('SELECT COUNT(*) FROM public.copytab')
         try:
             f = io.BytesIO()
 
@@ -733,7 +733,7 @@ class TestCopyTo(tb.ConnectedTestCase):
             records = [('2975ab9a-f79c-4ab4-9be5-7bc134d952f0',)]
 
             with self.assertRaisesRegex(
-                    asyncpg.InternalClientError, 'no binary format encoder'):
+                    async_gaussdb.InternalClientError, 'no binary format encoder'):
                 await self.con.copy_records_to_table(
                     'copytab', records=records)
 

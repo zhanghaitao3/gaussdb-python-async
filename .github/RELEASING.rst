@@ -1,17 +1,17 @@
-Releasing asyncpg
+Releasing async_gaussdb
 =================
 
-When making an asyncpg release follow the below checklist.
+When making an async_gaussdb release follow the below checklist.
 
-1. Remove the ``.dev0`` suffix from ``__version__`` in ``asyncpg/__init__.py``.
+1. Remove the ``.dev0`` suffix from ``__version__`` in ``async_gaussdb/__init__.py``.
 
 2. Make a release commit:
 
    .. code-block:: shell
 
-      $ git commit -a -m "asyncpg vX.Y.0"
+      $ git commit -a -m "async_gaussdb vX.Y.0"
 
-   Here, X.Y.0 is the ``__version__`` in ``asyncpg/__init__.py``.
+   Here, X.Y.0 is the ``__version__`` in ``async_gaussdb/__init__.py``.
 
 3. Force push into the "releases" branch on Github:
 
@@ -51,5 +51,5 @@ When making an asyncpg release follow the below checklist.
    rather than Markdown.)
 
 10. Open master for development by bumping the minor component of
-    ``__version__`` in ``asyncpg/__init__.py`` and appending the ``.dev0``
+    ``__version__`` in ``async_gaussdb/__init__.py`` and appending the ``.dev0``
     suffix.

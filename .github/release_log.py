@@ -13,7 +13,7 @@ import re
 import sys
 
 
-BASE_URL = 'https://api.github.com/repos/magicstack/asyncpg/compare'
+BASE_URL = 'https://api.github.com/repos/magicstack/async_gaussdb/compare'
 
 
 def main():

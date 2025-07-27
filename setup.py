@@ -8,7 +8,7 @@
 import sys
 
 if sys.version_info < (3, 8):
-    raise RuntimeError('asyncpg requires Python 3.8 or greater')
+    raise RuntimeError('async_gaussdb requires Python 3.8 or greater')
 
 import os
 import os.path
@@ -41,7 +41,7 @@ with open(str(_ROOT / 'README.rst')) as f:
     readme = f.read()
 
 
-with open(str(_ROOT / 'asyncpg' / '_version.py')) as f:
+with open(str(_ROOT / 'async_gaussdb' / '_version.py')) as f:
     for line in f:
         if line.startswith('__version__: typing.Final ='):
             _, _, version = line.partition('=')
@@ -49,7 +49,7 @@ with open(str(_ROOT / 'asyncpg' / '_version.py')) as f:
             break
     else:
         raise RuntimeError(
-            'unable to read the version from asyncpg/_version.py')
+            'unable to read the version from async_gaussdb/_version.py')
 
 
 if (_ROOT / '.git').is_dir() and 'dev' in VERSION:
@@ -76,7 +76,7 @@ if (_ROOT / '.git').is_dir() and 'dev' in VERSION:
 class VersionMixin:
 
     def _fix_version(self, filename):
-        # Replace asyncpg.__version__ with the actual version
+        # Replace async_gaussdb.__version__ with the actual version
         # of the distribution (possibly inferred from git).
 
         with open(str(filename)) as f:
@@ -94,7 +94,7 @@ class sdist(setuptools_sdist.sdist, VersionMixin):
 
     def make_release_tree(self, base_dir, files):
         super().make_release_tree(base_dir, files)
-        self._fix_version(pathlib.Path(base_dir) / 'asyncpg' / '_version.py')
+        self._fix_version(pathlib.Path(base_dir) / 'async_gaussdb' / '_version.py')
 
 
 class build_py(setuptools_build_py.build_py, VersionMixin):
@@ -102,7 +102,7 @@ class build_py(setuptools_build_py.build_py, VersionMixin):
     def build_module(self, module, module_file, package):
         outfile, copied = super().build_module(module, module_file, package)
 
-        if module == '__init__' and package == 'asyncpg':
+        if module == '__init__' and package == 'async_gaussdb':
             self._fix_version(outfile)
 
         return outfile, copied
@@ -128,11 +128,11 @@ class build_ext(setuptools_build_ext.build_ext):
 
         super(build_ext, self).initialize_options()
 
-        if os.environ.get('ASYNCPG_DEBUG'):
+        if os.environ.get('ASYNCGAUSSDB_DEBUG'):
             self.cython_always = True
             self.cython_annotate = True
             self.cython_directives = "linetrace=True"
-            self.define = 'PG_DEBUG,CYTHON_TRACE,CYTHON_TRACE_NOGIL'
+            self.define = 'GAUSSDB_DEBUG,CYTHON_TRACE,CYTHON_TRACE_NOGIL'
             self.debug = True
         else:
             self.cython_always = False
@@ -148,15 +148,15 @@ class build_ext(setuptools_build_ext.build_ext):
 
         if not self.cython_always:
             self.cython_always = bool(os.environ.get(
-                "ASYNCPG_BUILD_CYTHON_ALWAYS"))
+                "ASYNCGAUSSDB_BUILD_CYTHON_ALWAYS"))
 
         if self.cython_annotate is None:
             self.cython_annotate = os.environ.get(
-                "ASYNCPG_BUILD_CYTHON_ANNOTATE")
+                "ASYNCGAUSSDB_BUILD_CYTHON_ANNOTATE")
 
         if self.cython_directives is None:
             self.cython_directives = os.environ.get(
-                "ASYNCPG_BUILD_CYTHON_DIRECTIVES")
+                "ASYNCGAUSSDB_BUILD_CYTHON_DIRECTIVES")
 
         need_cythonize = self.cython_always
         cfiles = {}
@@ -187,13 +187,13 @@ class build_ext(setuptools_build_ext.build_ext):
                 import Cython
             except ImportError:
                 raise RuntimeError(
-                    'please install {} to compile asyncpg from source'.format(
+                    'please install {} to compile async_gaussdb from source'.format(
                         CYTHON_DEPENDENCY))
 
             cython_dep = pkg_resources.Requirement.parse(CYTHON_DEPENDENCY)
             if Cython.__version__ not in cython_dep:
                 raise RuntimeError(
-                    'asyncpg requires {}, got Cython=={}'.format(
+                    'async_gaussdb requires {}, got Cython=={}'.format(
                         CYTHON_DEPENDENCY, Cython.__version__
                     ))
 
@@ -224,8 +224,8 @@ class build_ext(setuptools_build_ext.build_ext):
 setup_requires = []
 
 if (
-    not (_ROOT / 'asyncpg' / 'protocol' / 'protocol.c').exists()
-    or os.environ.get("ASYNCPG_BUILD_CYTHON_ALWAYS")
+    not (_ROOT / 'async_gaussdb' / 'protocol' / 'protocol.c').exists()
+    or os.environ.get("ASYNCGAUSSDB_BUILD_CYTHON_ALWAYS")
 ):
     # No Cython output, require Cython to build.
     setup_requires.append(CYTHON_DEPENDENCY)
@@ -235,16 +235,16 @@ setuptools.setup(
     version=VERSION,
     ext_modules=[
         setuptools.extension.Extension(
-            "asyncpg.pgproto.pgproto",
-            ["asyncpg/pgproto/pgproto.pyx"],
+            "async_gaussdb.pgproto.pgproto",
+            ["async_gaussdb/pgproto/pgproto.pyx"],
             extra_compile_args=CFLAGS,
             extra_link_args=LDFLAGS),
 
         setuptools.extension.Extension(
-            "asyncpg.protocol.protocol",
-            ["asyncpg/protocol/record/recordobj.c",
-             "asyncpg/protocol/protocol.pyx"],
-            include_dirs=['asyncpg/pgproto/'],
+            "async_gaussdb.protocol.protocol",
+            ["async_gaussdb/protocol/record/recordobj.c",
+             "async_gaussdb/protocol/protocol.pyx"],
+            include_dirs=['async_gaussdb/pgproto/'],
             extra_compile_args=CFLAGS,
             extra_link_args=LDFLAGS),
     ],

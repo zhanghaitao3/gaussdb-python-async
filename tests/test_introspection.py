@@ -8,8 +8,8 @@
 import asyncio
 import json
 import unittest
-from asyncpg import _testbase as tb
-from asyncpg import connection as apg_con
+from async_gaussdb import _testbase as tb
+from async_gaussdb import connection as apg_con
 
 
 MAX_RUNTIME = 0.25
@@ -31,12 +31,12 @@ class TestIntrospection(tb.ConnectedTestCase):
         super().setUpClass()
         cls.adminconn = cls.loop.run_until_complete(cls.connect())
         cls.loop.run_until_complete(
-            cls.adminconn.execute('CREATE DATABASE asyncpg_intro_test'))
+            cls.adminconn.execute('CREATE DATABASE async_gaussdb_intro_test'))
 
     @classmethod
     def tearDownClass(cls):
         cls.loop.run_until_complete(
-            cls.adminconn.execute('DROP DATABASE asyncpg_intro_test'))
+            cls.adminconn.execute('DROP DATABASE async_gaussdb_intro_test'))
 
         cls.loop.run_until_complete(cls.adminconn.close())
         cls.adminconn = None
@@ -63,7 +63,7 @@ class TestIntrospection(tb.ConnectedTestCase):
             format="text",
         )
 
-    @tb.with_connection_options(database='asyncpg_intro_test')
+    @tb.with_connection_options(database='async_gaussdb_intro_test')
     async def test_introspection_on_large_db(self):
         await self.con.execute(
             'CREATE TABLE base ({})'.format(
@@ -204,7 +204,7 @@ class TestIntrospection(tb.ConnectedTestCase):
             await slow_intro_conn.close()
 
     @unittest.skip('DOMAIN is not yet supported.')
-    @tb.with_connection_options(database='asyncpg_intro_test')
+    @tb.with_connection_options(database='async_gaussdb_intro_test')
     async def test_introspection_loads_basetypes_of_domains(self):
         # Test that basetypes of domains are loaded to the
         # client encode/decode cache

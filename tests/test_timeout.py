@@ -7,9 +7,9 @@
 
 import asyncio
 
-import asyncpg
-from asyncpg import connection as pg_connection
-from asyncpg import _testbase as tb
+import async_gaussdb
+from async_gaussdb import connection as pg_connection
+from async_gaussdb import _testbase as tb
 
 
 MAX_RUNTIME = 0.5
@@ -64,7 +64,7 @@ class TestTimeout(tb.ConnectedTestCase):
 
     async def test_timeout_05(self):
         # Stress-test timeouts - try to trigger a race condition
-        # between a cancellation request to Postgres and next
+        # between a cancellation request to GaussDB and next
         # query (SELECT 1)
         for _ in range(500):
             with self.assertRaises(asyncio.TimeoutError):
@@ -104,7 +104,7 @@ class TestTimeout(tb.ConnectedTestCase):
                     self.assertRunUnder(MAX_RUNTIME):
                 await cur.fetchrow(timeout=0.1)
 
-            with self.assertRaises(asyncpg.InFailedSQLTransactionError):
+            with self.assertRaises(async_gaussdb.InFailedSQLTransactionError):
                 await cur.fetch(1)
 
         self.assertEqual(await self.con.fetch('select 1'), [(1,)])

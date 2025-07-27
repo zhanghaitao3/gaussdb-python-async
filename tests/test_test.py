@@ -10,7 +10,7 @@ import types
 import unittest
 
 
-from asyncpg import _testbase as tb
+from async_gaussdb import _testbase as tb
 
 
 class BaseSimpleTestCase:

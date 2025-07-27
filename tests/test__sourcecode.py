@@ -58,7 +58,7 @@ class TestCodeQuality(unittest.TestCase):
                     'mypy',
                     '--config-file',
                     config_path,
-                    'asyncpg'
+                    'async_gaussdb'
                 ],
                 check=True,
                 stdout=subprocess.PIPE,

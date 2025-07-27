@@ -10,8 +10,8 @@ import os
 import platform
 import unittest
 
-from asyncpg import _testbase as tb
-from asyncpg import exceptions
+from async_gaussdb import _testbase as tb
+from async_gaussdb import exceptions
 
 
 @unittest.skip('UNLISTEN statement is not yet supported.')
@@ -192,25 +192,25 @@ class TestLogListeners(tb.ConnectedTestCase):
         msg[2].pop('server_source_filename', None)
         self.assertEqual(
             msg,
-            (con, exceptions.PostgresLogMessage, expected_msg_notice))
+            (con, exceptions.GaussDBLogMessage, expected_msg_notice))
 
         msg = await q1.get()
         msg[2].pop('server_source_filename', None)
         self.assertEqual(
             msg,
-            (con, exceptions.PostgresWarning, expected_msg_warn))
+            (con, exceptions.GaussDBWarning, expected_msg_warn))
 
         msg = await q2.get()
         msg[2].pop('server_source_filename', None)
         self.assertEqual(
             msg,
-            (con, exceptions.PostgresLogMessage, expected_msg_notice))
+            (con, exceptions.GaussDBLogMessage, expected_msg_notice))
 
         msg = await q2.get()
         msg[2].pop('server_source_filename', None)
         self.assertEqual(
             msg,
-            (con, exceptions.PostgresWarning, expected_msg_warn))
+            (con, exceptions.GaussDBWarning, expected_msg_warn))
 
         con.remove_log_listener(notice_callb)
         con.remove_log_listener(async_notice_callb)
@@ -288,7 +288,7 @@ class TestLogListeners(tb.ConnectedTestCase):
 
         await raise_message('WARNING', '99999')
         msg = await q1.get()
-        self.assertIsInstance(msg, exceptions.PostgresWarning)
+        self.assertIsInstance(msg, exceptions.GaussDBWarning)
         self.assertEqual(msg.sqlstate, '99999')
 
         await raise_message('WARNING', '01004')
