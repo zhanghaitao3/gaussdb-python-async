@@ -1,7 +1,7 @@
 import asyncio
 
-from asyncpg import _testbase as tb
-from asyncpg import exceptions
+from async_gaussdb import _testbase as tb
+from async_gaussdb import exceptions
 
 
 class LogCollector:

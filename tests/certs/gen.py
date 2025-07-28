@@ -194,8 +194,8 @@ def main():
         state_or_province_name="Ontario",
         locality_name="Toronto",
         organization_name="MagicStack Inc.",
-        organizational_unit_name="asyncpg tests",
-        common_name="asyncpg test root ca",
+        organizational_unit_name="async_gaussdb tests",
+        common_name="async_gaussdb test root ca",
         email_address="hello@magic.io",
     )
     server = new_cert(
@@ -204,7 +204,7 @@ def main():
         country_name="CA",
         state_or_province_name="Ontario",
         organization_name="MagicStack Inc.",
-        organizational_unit_name="asyncpg tests",
+        organizational_unit_name="async_gaussdb tests",
         common_name="localhost",
         email_address="hello@magic.io",
         serial_number=4096,

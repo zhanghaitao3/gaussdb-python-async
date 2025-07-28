@@ -1,6 +1,6 @@
 [project]
-name = "asyncpg"
-description = "An asyncio PostgreSQL driver"
+name = "async_gaussdb"
+description = "An asyncio GaussDB driver"
 authors = [{name = "MagicStack Inc", email = "hello@magic.io"}]
 requires-python = '>=3.8.0'
 readme = "README.rst"
@@ -8,7 +8,7 @@ license = {text = "Apache License, Version 2.0"}
 dynamic = ["version"]
 keywords = [
     "database",
-    "postgres",
+    "gaussdb",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.urls]
-github = "https://github.com/MagicStack/asyncpg"
+github = "https://github.com/MagicStack/async_gaussdb"
 
 [project.optional-dependencies]
 gssauth = [
@@ -66,7 +66,7 @@ build-backend = "setuptools.build_meta"
 zip-safe = false
 
 [tool.setuptools.packages.find]
-include = ["asyncpg", "asyncpg.*"]
+include = ["async_gaussdb", "async_gaussdb.*"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["*.c", "*.h"]
@@ -76,7 +76,7 @@ build-frontend = "build"
 test-extras = "test"
 
 [tool.cibuildwheel.macos]
-before-all = ".github/workflows/install-postgres.sh"
+before-all = ".github/workflows/install-gaussdb.sh"
 test-command = "python {project}/tests/__init__.py"
 
 [tool.cibuildwheel.windows]
@@ -84,7 +84,7 @@ test-command = "python {project}\\tests\\__init__.py"
 
 [tool.cibuildwheel.linux]
 before-all = """
-    .github/workflows/install-postgres.sh \
+    .github/workflows/install-gaussdb.sh \
     && .github/workflows/install-krb5.sh \
     """
 test-command = """\
@@ -102,7 +102,7 @@ filterwarnings = "default"
 branch = true
 plugins = ["Cython.Coverage"]
 parallel = true
-source = ["asyncpg/", "tests/"]
+source = ["async_gaussdb/", "tests/"]
 omit = ["*.pxd"]
 
 [tool.coverage.report]
@@ -131,18 +131,18 @@ implicit_reexport = true
 
 [[tool.mypy.overrides]]
 module = [
-    "asyncpg._testbase",
-    "asyncpg._testbase.*",
-    "asyncpg.cluster",
-    "asyncpg.connect_utils",
-    "asyncpg.connection",
-    "asyncpg.connresource",
-    "asyncpg.cursor",
-    "asyncpg.exceptions",
-    "asyncpg.exceptions.*",
-    "asyncpg.pool",
-    "asyncpg.prepared_stmt",
-    "asyncpg.transaction",
-    "asyncpg.utils",
+    "async_gaussdb._testbase",
+    "async_gaussdb._testbase.*",
+    "async_gaussdb.cluster",
+    "async_gaussdb.connect_utils",
+    "async_gaussdb.connection",
+    "async_gaussdb.connresource",
+    "async_gaussdb.cursor",
+    "async_gaussdb.exceptions",
+    "async_gaussdb.exceptions.*",
+    "async_gaussdb.pool",
+    "async_gaussdb.prepared_stmt",
+    "async_gaussdb.transaction",
+    "async_gaussdb.utils",
 ]
 ignore_errors = true

@@ -10,21 +10,21 @@ all: compile
 
 clean:
 	rm -fr dist/ doc/_build/
-	rm -fr asyncpg/pgproto/*.c asyncpg/pgproto/*.html
-	rm -fr asyncpg/pgproto/codecs/*.html
-	rm -fr asyncpg/pgproto/*.so
-	rm -fr asyncpg/protocol/*.c asyncpg/protocol/*.html
-	rm -fr asyncpg/protocol/*.so build *.egg-info
-	rm -fr asyncpg/protocol/codecs/*.html
+	rm -fr async_gaussdb/pgproto/*.c async_gaussdb/pgproto/*.html
+	rm -fr async_gaussdb/pgproto/codecs/*.html
+	rm -fr async_gaussdb/pgproto/*.so
+	rm -fr async_gaussdb/protocol/*.c async_gaussdb/protocol/*.html
+	rm -fr async_gaussdb/protocol/*.so build *.egg-info
+	rm -fr async_gaussdb/protocol/codecs/*.html
 	find . -name '__pycache__' | xargs rm -rf
 
 
 compile:
-	env ASYNCPG_BUILD_CYTHON_ALWAYS=1 $(PYTHON) -m pip install -e .
+	env ASYNCGAUSSDB_BUILD_CYTHON_ALWAYS=1 $(PYTHON) -m pip install -e .
 
 
 debug:
-	env ASYNCPG_DEBUG=1 $(PYTHON) -m pip install -e .
+	env ASYNCGAUSSDB_DEBUG=1 $(PYTHON) -m pip install -e .
 
 test:
 	PYTHONASYNCIODEBUG=1 $(PYTHON) -m unittest -v tests.suite

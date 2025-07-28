@@ -6,8 +6,8 @@
 
 from itertools import product
 
-from asyncpg.types import Range
-from asyncpg import _testbase as tb
+from async_gaussdb.types import Range
+from async_gaussdb import _testbase as tb
 
 
 class TestTypes(tb.TestCase):

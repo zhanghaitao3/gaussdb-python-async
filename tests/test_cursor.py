@@ -5,10 +5,10 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
-import asyncpg
+import async_gaussdb
 import inspect
 
-from asyncpg import _testbase as tb
+from async_gaussdb import _testbase as tb
 
 
 class TestIterableCursor(tb.ConnectedTestCase):
@@ -33,7 +33,7 @@ class TestIterableCursor(tb.ConnectedTestCase):
         # outside of a transaction
         s = await self.con.prepare(
             'DECLARE t BINARY CURSOR WITHOUT HOLD FOR SELECT 1')
-        with self.assertRaises(asyncpg.NoActiveSQLTransactionError):
+        with self.assertRaises(async_gaussdb.NoActiveSQLTransactionError):
             await s.fetch()
 
         # Now test that statement.cursor() does not let you
@@ -44,7 +44,7 @@ class TestIterableCursor(tb.ConnectedTestCase):
         if inspect.isawaitable(it):
             it = await it
 
-        with self.assertRaisesRegex(asyncpg.NoActiveSQLTransactionError,
+        with self.assertRaisesRegex(async_gaussdb.NoActiveSQLTransactionError,
                                     'cursor cannot be created.*transaction'):
             await it.__anext__()
 
@@ -57,7 +57,7 @@ class TestIterableCursor(tb.ConnectedTestCase):
 
         st._state.mark_closed()
 
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'statement is closed'):
             async for _ in it:  # NOQA
                 pass
@@ -66,7 +66,7 @@ class TestIterableCursor(tb.ConnectedTestCase):
         st = await self.con.prepare('SELECT generate_series(0, 20)')
         st._state.mark_closed()
 
-        with self.assertRaisesRegex(asyncpg.InterfaceError,
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                     'statement is closed'):
             async for _ in st.cursor():  # NOQA
                 pass
@@ -75,7 +75,7 @@ class TestIterableCursor(tb.ConnectedTestCase):
         st = await self.con.prepare('SELECT generate_series(0, 20)')
         for prefetch in range(-1, 1):
             with self.subTest(prefetch=prefetch):
-                with self.assertRaisesRegex(asyncpg.InterfaceError,
+                with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                             'must be greater than zero'):
                     async for _ in st.cursor(prefetch=prefetch):  # NOQA
                         pass
@@ -105,7 +105,7 @@ class TestCursor(tb.ConnectedTestCase):
 
     async def test_cursor_01(self):
         st = await self.con.prepare('SELECT generate_series(0, 20)')
-        with self.assertRaisesRegex(asyncpg.NoActiveSQLTransactionError,
+        with self.assertRaisesRegex(async_gaussdb.NoActiveSQLTransactionError,
                                     'cursor cannot be created.*transaction'):
             await st.cursor()
 
@@ -115,7 +115,7 @@ class TestCursor(tb.ConnectedTestCase):
             cur = await st.cursor()
 
             for i in range(-1, 1):
-                with self.assertRaisesRegex(asyncpg.InterfaceError,
+                with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                             'greater than zero'):
                     await cur.fetch(i)
 
@@ -126,7 +126,7 @@ class TestCursor(tb.ConnectedTestCase):
             self.assertEqual(rec, (2,))
 
             r = repr(cur)
-            self.assertTrue(r.startswith('<asyncpg.Cursor '))
+            self.assertTrue(r.startswith('<async_gaussdb.Cursor '))
             self.assertNotIn(' exhausted ', r)
             self.assertIn('"SELECT generate', r)
 
@@ -143,14 +143,14 @@ class TestCursor(tb.ConnectedTestCase):
             self.assertEqual(await cur.fetch(5), [])
 
             r = repr(cur)
-            self.assertTrue(r.startswith('<asyncpg.Cursor '))
+            self.assertTrue(r.startswith('<async_gaussdb.Cursor '))
             self.assertIn(' exhausted ', r)
             self.assertIn('"SELECT generate', r)
 
     async def test_cursor_03(self):
         st = await self.con.prepare('SELECT generate_series(0, 20)')
         async with self.con.transaction():
-            with self.assertRaisesRegex(asyncpg.InterfaceError,
+            with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                         'prefetch argument can only'):
                 await st.cursor(prefetch=10)
 

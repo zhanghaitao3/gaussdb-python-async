@@ -10,7 +10,7 @@
 import argparse
 import asyncio
 
-import asyncpg
+import async_gaussdb
 
 
 # Array types with builtin codecs, necessary for codec
@@ -20,7 +20,7 @@ _BUILTIN_ARRAYS = ('_text', '_oid')
 
 _INVALIDOID = 0
 
-# postgresql/src/include/access/transam.h: FirstBootstrapObjectId
+# gaussdbsql/src/include/access/transam.h: FirstBootstrapObjectId
 _MAXBUILTINOID = 10000 - 1
 
 # A list of alternative names for builtin types.
@@ -44,8 +44,9 @@ _TYPE_ALIASES = {
 
 
 async def runner(args):
-    conn = await asyncpg.connect(host=args.pghost, port=args.pgport,
-                                 user=args.pguser)
+    conn = await async_gaussdb.connect(host=args.pghost,
+                                       port=args.pgport,
+                                       user=args.pguser)
 
     buf = (
         '# Copyright (C) 2016-present the asyncpg authors and contributors\n'
@@ -115,13 +116,13 @@ def main():
         description='generate protocol/pgtypes.pxi from pg_catalog.pg_types')
     parser.add_argument(
         '--pghost', type=str, default='127.0.0.1',
-        help='PostgreSQL server host')
+        help='GaussDBSQL server host')
     parser.add_argument(
         '--pgport', type=int, default=5432,
-        help='PostgreSQL server port')
+        help='GaussDBSQL server port')
     parser.add_argument(
         '--pguser', type=str, default='postgres',
-        help='PostgreSQL server user')
+        help='GaussDBSQL server user')
 
     args = parser.parse_args()
     asyncio.run(runner(args))

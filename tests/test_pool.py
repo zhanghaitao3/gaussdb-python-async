@@ -15,11 +15,11 @@ import textwrap
 import time
 import unittest
 
-import asyncpg
-from asyncpg import _testbase as tb
-from asyncpg import connection as pg_connection
-from asyncpg import pool as pg_pool
-from asyncpg import cluster as pg_cluster
+import async_gaussdb
+from async_gaussdb import _testbase as tb
+from async_gaussdb import connection as pg_connection
+from async_gaussdb import pool as pg_pool
+from async_gaussdb import cluster as pg_cluster
 
 _system = platform.uname().system
 
@@ -192,9 +192,9 @@ class TestPool(tb.ConnectedTestCase):
             return 1
 
         with self.assertRaisesRegex(
-            asyncpg.InterfaceError,
+            async_gaussdb.InterfaceError,
             "expected pool connect callback to return an instance of "
-            "'asyncpg\\.connection\\.Connection', got 'int'"
+            "'async_gaussdb\\.connection\\.Connection', got 'int'"
         ):
             await self.create_pool(database='postgres', connect=bad_connect)
 
@@ -203,7 +203,7 @@ class TestPool(tb.ConnectedTestCase):
                                       min_size=1, max_size=1)
 
         con = await pool.acquire(timeout=POOL_NOMINAL_TIMEOUT)
-        with self.assertRaisesRegex(asyncpg.InterfaceError, 'is not a member'):
+        with self.assertRaisesRegex(async_gaussdb.InterfaceError, 'is not a member'):
             await pool.release(con._con)
 
     @unittest.skip("UNLISTEN statement is not yet supported.")
@@ -216,7 +216,7 @@ class TestPool(tb.ConnectedTestCase):
 
         try:
             con = await pool1.acquire(timeout=POOL_NOMINAL_TIMEOUT)
-            with self.assertRaisesRegex(asyncpg.InterfaceError,
+            with self.assertRaisesRegex(async_gaussdb.InterfaceError,
                                         'is not a member'):
                 await pool2.release(con)
         finally:
@@ -253,7 +253,7 @@ class TestPool(tb.ConnectedTestCase):
         self.assertIn('[released]', repr(con))
 
         with self.assertRaisesRegex(
-                asyncpg.InterfaceError,
+                async_gaussdb.InterfaceError,
                 r'cannot call Connection\.execute.*released back to the pool'):
 
             con.execute('select 1')
@@ -262,7 +262,7 @@ class TestPool(tb.ConnectedTestCase):
                      'get_query', 'get_statusmsg', 'get_parameters',
                      'get_attributes'):
             with self.assertRaisesRegex(
-                    asyncpg.InterfaceError,
+                    async_gaussdb.InterfaceError,
                     r'cannot call PreparedStatement\.{meth}.*released '
                     r'back to the pool'.format(meth=meth)):
 
@@ -271,14 +271,14 @@ class TestPool(tb.ConnectedTestCase):
         for c in (cur, ps_cur):
             for meth in ('fetch', 'fetchrow'):
                 with self.assertRaisesRegex(
-                        asyncpg.InterfaceError,
+                        async_gaussdb.InterfaceError,
                         r'cannot call Cursor\.{meth}.*released '
                         r'back to the pool'.format(meth=meth)):
 
                     getattr(c, meth)()
 
             with self.assertRaisesRegex(
-                    asyncpg.InterfaceError,
+                    async_gaussdb.InterfaceError,
                     r'cannot call Cursor\.forward.*released '
                     r'back to the pool'):
 
@@ -286,7 +286,7 @@ class TestPool(tb.ConnectedTestCase):
 
         for meth in ('start', 'commit', 'rollback'):
             with self.assertRaisesRegex(
-                    asyncpg.InterfaceError,
+                    async_gaussdb.InterfaceError,
                     r'cannot call Transaction\.{meth}.*released '
                     r'back to the pool'.format(meth=meth)):
 
@@ -323,7 +323,7 @@ class TestPool(tb.ConnectedTestCase):
     def test_pool_init_run_until_complete(self):
         pool_init = self.create_pool(database='postgres')
         pool = self.loop.run_until_complete(pool_init)
-        self.assertIsInstance(pool, asyncpg.pool.Pool)
+        self.assertIsInstance(pool, async_gaussdb.pool.Pool)
 
     @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_exception_in_setup_and_init(self):
@@ -421,7 +421,7 @@ class TestPool(tb.ConnectedTestCase):
 
     @unittest.skip("UNLISTEN statement is not yet supported.")
     async def test_pool_handles_task_cancel_in_acquire_with_timeout(self):
-        # See https://github.com/MagicStack/asyncpg/issues/547
+        # See https://github.com/MagicStack/async_gaussdb/issues/547
         pool = await self.create_pool(database='postgres',
                                       min_size=1, max_size=1)
 
@@ -503,7 +503,7 @@ class TestPool(tb.ConnectedTestCase):
         N = 100
         cons = set()
 
-        class MyConnection(asyncpg.Connection):
+        class MyConnection(async_gaussdb.Connection):
             async def foo(self):
                 return 42
 
@@ -986,7 +986,7 @@ class TestPool(tb.ConnectedTestCase):
 
         await t1
         with self.assertRaisesRegex(
-                asyncpg.InterfaceError,
+                async_gaussdb.InterfaceError,
                 r'pool is being initialized in another task'):
             await t2
 
@@ -999,7 +999,7 @@ class TestPool(tb.ConnectedTestCase):
         await asyncio.sleep(0)
 
         with self.assertRaisesRegex(
-                asyncpg.InterfaceError,
+                async_gaussdb.InterfaceError,
                 r'being initialized, but not yet ready'):
 
             await pool.fetchval('SELECT 1')
@@ -1062,7 +1062,7 @@ class TestPoolReconnectWithTargetSessionAttrs(tb.ClusterTestCase):
 
     async def test_full_reconnect_on_node_change_role(self):
         if self.cluster.get_pg_version() < (12, 0):
-            self.skipTest("PostgreSQL < 12 cannot support standby.signal")
+            self.skipTest("GaussDBSQL < 12 cannot support standby.signal")
             return
 
         pool = await self.create_pool(
@@ -1078,7 +1078,7 @@ class TestPoolReconnectWithTargetSessionAttrs(tb.ClusterTestCase):
 
         # current pool connection info cache is expired,
         # but we don't know it yet
-        with self.assertRaises(asyncpg.TargetServerAttributeNotMatched) as cm:
+        with self.assertRaises(async_gaussdb.TargetServerAttributeNotMatched) as cm:
             await pool.execute('SELECT 1')
 
         self.assertEqual(
@@ -1088,7 +1088,7 @@ class TestPoolReconnectWithTargetSessionAttrs(tb.ClusterTestCase):
         )
 
         # force reconnect
-        with self.assertRaises(asyncpg.TargetServerAttributeNotMatched) as cm:
+        with self.assertRaises(async_gaussdb.TargetServerAttributeNotMatched) as cm:
             await pool.execute('SELECT 1')
 
         self.assertEqual(

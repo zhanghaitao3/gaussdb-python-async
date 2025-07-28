@@ -5,27 +5,27 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
-import asyncpg
-from asyncpg import _testbase as tb
+import async_gaussdb
+from async_gaussdb import _testbase as tb
 
 
 class TestExceptions(tb.ConnectedTestCase):
 
     def test_exceptions_exported(self):
-        for err in ('PostgresError', 'SubstringError', 'InterfaceError'):
-            self.assertTrue(hasattr(asyncpg, err))
-            self.assertIn(err, asyncpg.__all__)
+        for err in ('GaussDBError', 'SubstringError', 'InterfaceError'):
+            self.assertTrue(hasattr(async_gaussdb, err))
+            self.assertIn(err, async_gaussdb.__all__)
 
-        for err in ('PostgresMessage',):
-            self.assertFalse(hasattr(asyncpg, err))
-            self.assertNotIn(err, asyncpg.__all__)
+        for err in ('GaussDBMessage',):
+            self.assertFalse(hasattr(async_gaussdb, err))
+            self.assertNotIn(err, async_gaussdb.__all__)
 
-        self.assertIsNone(asyncpg.PostgresError.schema_name)
+        self.assertIsNone(async_gaussdb.GaussDBError.schema_name)
 
     async def test_exceptions_unpacking(self):
         try:
             await self.con.execute('SELECT * FROM _nonexistent_')
-        except asyncpg.UndefinedTableError as e:
+        except async_gaussdb.UndefinedTableError as e:
             self.assertEqual(e.sqlstate, '42P01')
             self.assertEqual(e.position, '15')
             self.assertEqual(e.query, 'SELECT * FROM _nonexistent_')
@@ -38,7 +38,7 @@ class TestExceptions(tb.ConnectedTestCase):
             await self.con.execute('''
                  CREATE FUNCTION foo() RETURNS bool AS $$ $$ LANGUAGE SQL;
             ''')
-        except asyncpg.InvalidFunctionDefinitionError as e:
+        except async_gaussdb.InvalidFunctionDefinitionError as e:
             if self.server_version < (17, 0):
                 detail = (
                     "Function's final statement must be SELECT or "

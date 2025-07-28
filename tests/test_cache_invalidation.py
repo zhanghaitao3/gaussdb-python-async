@@ -5,8 +5,8 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
-import asyncpg
-from asyncpg import _testbase as tb
+import async_gaussdb
+from async_gaussdb import _testbase as tb
 import unittest
 ERRNUM = 'unexpected number of attributes of composite type'
 ERRTYP = 'unexpected data type of composite type'
@@ -64,7 +64,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
             await self.con.execute(
                 'ALTER TABLE tab1 ALTER COLUMN b SET DATA TYPE text')
 
-            with self.assertRaisesRegex(asyncpg.InvalidCachedStatementError,
+            with self.assertRaisesRegex(async_gaussdb.InvalidCachedStatementError,
                                         'cached statement plan is invalid'):
                 async with self.con.transaction():
                     result = await self.con.fetchrow('SELECT * FROM tab1')
@@ -140,7 +140,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
             async with self.con.transaction():
                 await self.con.execute('ALTER TYPE typ1 ADD ATTRIBUTE c text')
                 with self.assertRaisesRegex(
-                        asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                        async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                     await self.con.fetchrow('SELECT * FROM tab1')
 
                 self._check_statements_are_closed(statements)
@@ -173,7 +173,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
                     await self.con.execute(
                         'ALTER TYPE typ1 ADD ATTRIBUTE c text')
                     with self.assertRaisesRegex(
-                            asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                            async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                         await self.con.fetchrow('SELECT * FROM tab1')
 
                     self._check_statements_are_closed(statements)
@@ -186,7 +186,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
                 pass
 
             with self.assertRaisesRegex(
-                    asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                    async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                 await self.con.fetchrow('SELECT * FROM tab1')
             # This is now OK, the cache is filled after being dropped.
             result = await self.con.fetchrow('SELECT * FROM tab1')
@@ -214,7 +214,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
                     await self.con.execute(
                         'ALTER TYPE typ1 ADD ATTRIBUTE c text')
                     with self.assertRaisesRegex(
-                            asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                            async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                         await prep.fetchrow()
 
                     self._check_statements_are_closed(statements)
@@ -223,7 +223,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
                     # cache cleanup it is not possible to use it.
                     # That's why it is marked as closed.
                     with self.assertRaisesRegex(
-                            asyncpg.InterfaceError,
+                            async_gaussdb.InterfaceError,
                             'the prepared statement is closed'):
                         await prep.fetchrow()
 
@@ -237,7 +237,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
                 pass
 
             with self.assertRaisesRegex(
-                    asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                    async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                 await prep.fetchrow()
 
             # Reprepare it again after dropping cache.
@@ -265,7 +265,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
 
             await self.con.execute('ALTER TYPE typ1 DROP ATTRIBUTE x')
             with self.assertRaisesRegex(
-                    asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                    async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                 await self.con.fetchrow('SELECT * FROM tab1')
 
             self._check_statements_are_closed(statements)
@@ -296,7 +296,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
             await self.con.execute('ALTER TYPE typ1 DROP ATTRIBUTE y')
             await self.con.execute('ALTER TYPE typ1 ADD ATTRIBUTE y bigint')
             with self.assertRaisesRegex(
-                    asyncpg.OutdatedSchemaCacheError, ERRTYP):
+                    async_gaussdb.OutdatedSchemaCacheError, ERRTYP):
                 await self.con.fetchrow('SELECT * FROM tab1')
 
             self._check_statements_are_closed(statements)
@@ -358,7 +358,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
             # con1 tries to get cached type info, fails, but invalidates the
             # cache for the entire pool.
             with self.assertRaisesRegex(
-                    asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                    async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                 await con1.fetchrow('SELECT * FROM tab1')
 
             self._check_statements_are_closed(statements1)
@@ -379,7 +379,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
             self._check_statements_are_not_closed(statements_chk)
 
             with self.assertRaisesRegex(
-                    asyncpg.OutdatedSchemaCacheError, ERRNUM):
+                    async_gaussdb.OutdatedSchemaCacheError, ERRNUM):
                 await con_chk.fetchrow('SELECT * FROM tab1')
 
             self._check_statements_are_closed(statements_chk)

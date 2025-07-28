@@ -10,15 +10,15 @@ the problem is provided, with clear instructions on how to run it.
 Thank you!
 -->
 
-* **asyncpg version**:
+* **async_gaussdb version**:
 * **PostgreSQL version**:
 * **Do you use a PostgreSQL SaaS?  If so, which?  Can you reproduce
   the issue with a local PostgreSQL install?**:
 * **Python version**:
 * **Platform**:
 * **Do you use pgbouncer?**:
-* **Did you install asyncpg with pip?**:
-* **If you built asyncpg locally, which version of Cython did you use?**:
+* **Did you install async_gaussdb with pip?**:
+* **If you built async_gaussdb locally, which version of Cython did you use?**:
 * **Can the issue be reproduced under both asyncio and
   [uvloop](https://github.com/magicstack/uvloop)?**:
 

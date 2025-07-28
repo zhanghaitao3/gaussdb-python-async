@@ -15,9 +15,9 @@ import struct
 import unittest
 import uuid
 
-import asyncpg
-from asyncpg import _testbase as tb
-from asyncpg import cluster as pg_cluster
+import async_gaussdb
+from async_gaussdb import _testbase as tb
+from async_gaussdb import cluster as pg_cluster
 
 
 def _timezone(offset):
@@ -362,7 +362,7 @@ type_samples = [
         dict(
             input='127.0.0.1/32',
             output=ipaddress.IPv4Address('127.0.0.1')),
-        # Postgres appends /32 when casting to text explicitly, but
+        # GaussDB appends /32 when casting to text explicitly, but
         # *not* in inet_out.
         dict(
             input='10.11.12.13',
@@ -406,47 +406,50 @@ type_samples = [
         1,
     ), (13, 0)),
     ('varbit', 'varbit', [
-        asyncpg.BitString('0000 0001'),
-        asyncpg.BitString('00010001'),
-        asyncpg.BitString(''),
-        asyncpg.BitString(),
-        asyncpg.BitString.frombytes(b'\x00', bitlength=3),
-        asyncpg.BitString('0000 0000 1'),
-        dict(input=b'\x01', output=asyncpg.BitString('0000 0001')),
-        dict(input=bytearray(b'\x02'), output=asyncpg.BitString('0000 0010')),
+        async_gaussdb.BitString('0000 0001'),
+        async_gaussdb.BitString('00010001'),
+        async_gaussdb.BitString(''),
+        async_gaussdb.BitString(),
+        async_gaussdb.BitString.frombytes(b'\x00', bitlength=3),
+        async_gaussdb.BitString('0000 0000 1'),
+        dict(input=b'\x01', output=async_gaussdb.BitString('0000 0001')),
+        dict(input=bytearray(b'\x02'), output=async_gaussdb.BitString('0000 0010')),
     ]),
     ('path', 'path', [
-        asyncpg.Path(asyncpg.Point(0.0, 0.0), asyncpg.Point(1.0, 1.0)),
-        asyncpg.Path(asyncpg.Point(0.0, 0.0), asyncpg.Point(1.0, 1.0),
-                     is_closed=True),
+        async_gaussdb.Path(async_gaussdb.Point(0.0, 0.0), async_gaussdb.Point(1.0, 1.0)),
+        async_gaussdb.Path(async_gaussdb.Point(0.0, 0.0),
+                           async_gaussdb.Point(1.0, 1.0),
+                           is_closed=True),
         dict(input=((0.0, 0.0), (1.0, 1.0)),
-             output=asyncpg.Path(asyncpg.Point(0.0, 0.0),
-                                 asyncpg.Point(1.0, 1.0),
-                                 is_closed=True)),
+             output=async_gaussdb.Path(async_gaussdb.Point(0.0, 0.0),
+                                       async_gaussdb.Point(1.0, 1.0),
+                                       is_closed=True)),
         dict(input=[(0.0, 0.0), (1.0, 1.0)],
-             output=asyncpg.Path(asyncpg.Point(0.0, 0.0),
-                                 asyncpg.Point(1.0, 1.0),
-                                 is_closed=False)),
+             output=async_gaussdb.Path(async_gaussdb.Point(0.0, 0.0),
+                                       async_gaussdb.Point(1.0, 1.0),
+                                       is_closed=False)),
     ]),
     ('point', 'point', [
-        asyncpg.Point(0.0, 0.0),
-        asyncpg.Point(1.0, 2.0),
+        async_gaussdb.Point(0.0, 0.0),
+        async_gaussdb.Point(1.0, 2.0),
     ]),
     ('box', 'box', [
-        asyncpg.Box((1.0, 2.0), (0.0, 0.0)),
+        async_gaussdb.Box((1.0, 2.0), (0.0, 0.0)),
     ]),
     ('line', 'line', [
-        asyncpg.Line(1, 2, 3),
+        async_gaussdb.Line(1, 2, 3),
     ], (9, 4)),
     ('lseg', 'lseg', [
-        asyncpg.LineSegment((1, 2), (2, 2)),
+        async_gaussdb.LineSegment((1, 2), (2, 2)),
     ]),
     ('polygon', 'polygon', [
-        asyncpg.Polygon(asyncpg.Point(0.0, 0.0), asyncpg.Point(1.0, 0.0),
-                        asyncpg.Point(1.0, 1.0), asyncpg.Point(0.0, 1.0)),
+        async_gaussdb.Polygon(async_gaussdb.Point(0.0, 0.0),
+                              async_gaussdb.Point(1.0, 0.0),
+                              async_gaussdb.Point(1.0, 1.0),
+                              async_gaussdb.Point(0.0, 1.0)),
     ]),
     ('circle', 'circle', [
-        asyncpg.Circle((0.0, 0.0), 100),
+        async_gaussdb.Circle((0.0, 0.0), 100),
     ]),
     ('tid', 'tid', [
         (100, 200),
@@ -524,10 +527,10 @@ class TestCodecs(tb.ConnectedTestCase):
                                 math.isclose(result, outputval, rel_tol=1e-6),
                                 err_msg)
                     else:
-                        if (isinstance(result, datetime.datetime) and 
-                            typname == 'date' and 
-                            isinstance(outputval, datetime.date) and 
-                            not isinstance(outputval, datetime.datetime)):
+                        if (isinstance(result, datetime.datetime) and
+                                typname == 'date' and
+                                isinstance(outputval, datetime.date) and
+                                not isinstance(outputval, datetime.datetime)):
                             self.assertEqual(result.date(), outputval, err_msg)
                         else:
                             self.assertEqual(result, outputval, err_msg)
@@ -554,7 +557,7 @@ class TestCodecs(tb.ConnectedTestCase):
                 self.assertEqual(at[0].type.name, intname)
 
     async def test_all_builtin_types_handled(self):
-        from asyncpg.protocol.protocol import BUILTIN_TYPE_OID_MAP
+        from async_gaussdb.protocol.protocol import BUILTIN_TYPE_OID_MAP
 
         for oid, typename in BUILTIN_TYPE_OID_MAP.items():
             codec = self.con.get_settings().get_data_codec(oid)
@@ -570,7 +573,7 @@ class TestCodecs(tb.ConnectedTestCase):
     def test_bitstring(self):
         bitlen = random.randint(0, 1000)
         bs = ''.join(random.choice(('1', '0', ' ')) for _ in range(bitlen))
-        bits = asyncpg.BitString(bs)
+        bits = async_gaussdb.BitString(bs)
         sanitized_bs = bs.replace(' ', '')
         self.assertEqual(sanitized_bs,
                          bits.as_string().replace(' ', ''))
@@ -645,20 +648,20 @@ class TestCodecs(tb.ConnectedTestCase):
 
         if self.server_version < (14, 0):
             with self.assertRaisesRegex(
-                asyncpg.DataError,
+                async_gaussdb.DataError,
                 'invalid sign in external "numeric" value'
             ):
                 await self.con.fetchval(
                     "SELECT $1::numeric", decimal.Decimal('-Inf'))
 
             with self.assertRaisesRegex(
-                asyncpg.DataError,
+                async_gaussdb.DataError,
                 'invalid sign in external "numeric" value'
             ):
                 await self.con.fetchval(
                     "SELECT $1::numeric", decimal.Decimal('+Inf'))
 
-            with self.assertRaisesRegex(asyncpg.DataError, 'invalid'):
+            with self.assertRaisesRegex(async_gaussdb.DataError, 'invalid'):
                 await self.con.fetchval(
                     "SELECT $1::numeric", 'invalid')
         else:
@@ -670,7 +673,7 @@ class TestCodecs(tb.ConnectedTestCase):
                 "SELECT $1::numeric", decimal.Decimal("+Inf"))
             self.assertTrue(res.is_infinite())
 
-        with self.assertRaisesRegex(asyncpg.DataError, 'invalid'):
+        with self.assertRaisesRegex(async_gaussdb.DataError, 'invalid'):
             await self.con.fetchval(
                 "SELECT $1::numeric", 'invalid')
 
@@ -796,7 +799,7 @@ class TestCodecs(tb.ConnectedTestCase):
                         r'invalid input for query argument \$1:.*' + errmsg)
 
                     with self.assertRaisesRegex(
-                            asyncpg.DataError, full_errmsg):
+                            async_gaussdb.DataError, full_errmsg):
                         await stmt.fetchval(sample)
 
     async def test_arrays(self):
@@ -825,7 +828,7 @@ class TestCodecs(tb.ConnectedTestCase):
                 res = await self.con.fetchval(sql)
                 self.assertEqual(res, expected)
 
-        with self.assertRaises(asyncpg.ProgramLimitExceededError):
+        with self.assertRaises(async_gaussdb.ProgramLimitExceededError):
             await self.con.fetchval("SELECT '{{{{{{{1}}}}}}}'::int[]")
 
         cases = [
@@ -867,39 +870,39 @@ class TestCodecs(tb.ConnectedTestCase):
             def __contains__(self, item):
                 return False
 
-        with self.assertRaisesRegex(asyncpg.DataError,
+        with self.assertRaisesRegex(async_gaussdb.DataError,
                                     'sized iterable container expected'):
             result = await self.con.fetchval("SELECT $1::int[]",
                                              SomeContainer())
 
-        with self.assertRaisesRegex(asyncpg.DataError, 'dimensions'):
+        with self.assertRaisesRegex(async_gaussdb.DataError, 'dimensions'):
             await self.con.fetchval(
                 "SELECT $1::int[]",
                 [[[[[[[1]]]]]]])
 
-        with self.assertRaisesRegex(asyncpg.DataError, 'non-homogeneous'):
+        with self.assertRaisesRegex(async_gaussdb.DataError, 'non-homogeneous'):
             await self.con.fetchval(
                 "SELECT $1::int[]",
                 [1, [1]])
 
-        with self.assertRaisesRegex(asyncpg.DataError, 'non-homogeneous'):
+        with self.assertRaisesRegex(async_gaussdb.DataError, 'non-homogeneous'):
             await self.con.fetchval(
                 "SELECT $1::int[]",
                 [[1], 1, [2]])
 
-        with self.assertRaisesRegex(asyncpg.DataError,
+        with self.assertRaisesRegex(async_gaussdb.DataError,
                                     'invalid array element'):
             await self.con.fetchval(
                 "SELECT $1::int[]",
                 [1, 't', 2])
 
-        with self.assertRaisesRegex(asyncpg.DataError,
+        with self.assertRaisesRegex(async_gaussdb.DataError,
                                     'invalid array element'):
             await self.con.fetchval(
                 "SELECT $1::int[]",
                 [[1], ['t'], [2]])
 
-        with self.assertRaisesRegex(asyncpg.DataError,
+        with self.assertRaisesRegex(async_gaussdb.DataError,
                                     'sized iterable container expected'):
             await self.con.fetchval(
                 "SELECT $1::int[]",
@@ -924,7 +927,7 @@ class TestCodecs(tb.ConnectedTestCase):
         self.assertEqual(res, (None, 1234, '5678', (42, '42')))
 
         with self.assertRaisesRegex(
-            asyncpg.UnsupportedClientFeatureError,
+            async_gaussdb.UnsupportedClientFeatureError,
             'query argument \\$1: input of anonymous '
             'composite types is not supported',
         ):
@@ -975,7 +978,7 @@ class TestCodecs(tb.ConnectedTestCase):
             self.assertEqual(res, (1, None, None))
 
             with self.assertRaisesRegex(
-                    asyncpg.DataError,
+                    async_gaussdb.DataError,
                     "'bad' is not a valid element"):
                 await self.con.fetchval(
                     "SELECT $1::test_composite",
@@ -1026,19 +1029,20 @@ class TestCodecs(tb.ConnectedTestCase):
 
         cases = [
             ('int4range', [
-                [(1, 9), asyncpg.Range(1, 10)],
-                [asyncpg.Range(0, 9, lower_inc=False, upper_inc=True),
-                 asyncpg.Range(1, 10)],
-                [(), asyncpg.Range(empty=True)],
-                [asyncpg.Range(empty=True), asyncpg.Range(empty=True)],
-                [(None, 2), asyncpg.Range(None, 3)],
-                [asyncpg.Range(None, 2, upper_inc=True),
-                 asyncpg.Range(None, 3)],
-                [(2,), asyncpg.Range(2, None)],
-                [(2, None), asyncpg.Range(2, None)],
-                [asyncpg.Range(2, None), asyncpg.Range(2, None)],
-                [(None, None), asyncpg.Range(None, None)],
-                [asyncpg.Range(None, None), asyncpg.Range(None, None)]
+                [(1, 9), async_gaussdb.Range(1, 10)],
+                [async_gaussdb.Range(0, 9, lower_inc=False, upper_inc=True),
+                 async_gaussdb.Range(1, 10)],
+                [(), async_gaussdb.Range(empty=True)],
+                [async_gaussdb.Range(empty=True),
+                 async_gaussdb.Range(empty=True)],
+                [(None, 2), async_gaussdb.Range(None, 3)],
+                [async_gaussdb.Range(None, 2, upper_inc=True),
+                 async_gaussdb.Range(None, 3)],
+                [(2,), async_gaussdb.Range(2, None)],
+                [(2, None), async_gaussdb.Range(2, None)],
+                [async_gaussdb.Range(2, None), async_gaussdb.Range(2, None)],
+                [(None, None), async_gaussdb.Range(None, None)],
+                [async_gaussdb.Range(None, None), async_gaussdb.Range(None, None)]
             ])
         ]
 
@@ -1053,19 +1057,20 @@ class TestCodecs(tb.ConnectedTestCase):
                     self.assertEqual(result, expected)
 
         with self.assertRaisesRegex(
-                asyncpg.DataError, 'list, tuple or Range object expected'):
+                async_gaussdb.DataError, 'list, tuple or Range object expected'):
             await self.con.fetch("SELECT $1::int4range", 'aa')
 
         with self.assertRaisesRegex(
-                asyncpg.DataError, 'expected 0, 1 or 2 elements'):
+                async_gaussdb.DataError, 'expected 0, 1 or 2 elements'):
             await self.con.fetch("SELECT $1::int4range", (0, 2, 3))
 
-        cases = [(asyncpg.Range(0, 1), asyncpg.Range(0, 1), 1),
-                 (asyncpg.Range(0, 1), asyncpg.Range(0, 2), 2),
-                 (asyncpg.Range(empty=True), asyncpg.Range(0, 2), 2),
-                 (asyncpg.Range(empty=True), asyncpg.Range(empty=True), 1),
-                 (asyncpg.Range(0, 1, upper_inc=True), asyncpg.Range(0, 1), 2),
-                 ]
+        cases = [
+            (async_gaussdb.Range(0, 1), async_gaussdb.Range(0, 1), 1),
+            (async_gaussdb.Range(0, 1), async_gaussdb.Range(0, 2), 2),
+            (async_gaussdb.Range(empty=True), async_gaussdb.Range(0, 2), 2),
+            (async_gaussdb.Range(empty=True), async_gaussdb.Range(empty=True), 1),
+            (async_gaussdb.Range(0, 1, upper_inc=True), async_gaussdb.Range(0, 1), 2),
+        ]
         for obj_a, obj_b, count in cases:
             dic = {obj_a: 1, obj_b: 2}
             self.assertEqual(len(dic), count)
@@ -1087,24 +1092,24 @@ class TestCodecs(tb.ConnectedTestCase):
                     []
                 ],
                 [
-                    [asyncpg.Range(empty=True)],
+                    [async_gaussdb.Range(empty=True)],
                     []
                 ],
                 [
-                    [asyncpg.Range(0, 9, lower_inc=False, upper_inc=True)],
-                    [asyncpg.Range(1, 10)]
+                    [async_gaussdb.Range(0, 9, lower_inc=False, upper_inc=True)],
+                    [async_gaussdb.Range(1, 10)]
                 ],
                 [
                     [(1, 9), (9, 11)],
-                    [asyncpg.Range(1, 12)]
+                    [async_gaussdb.Range(1, 12)]
                 ],
                 [
                     [(1, 9), (20, 30)],
-                    [asyncpg.Range(1, 10), asyncpg.Range(20, 31)]
+                    [async_gaussdb.Range(1, 10), async_gaussdb.Range(20, 31)]
                 ],
                 [
                     [(None, 2)],
-                    [asyncpg.Range(None, 3)],
+                    [async_gaussdb.Range(None, 3)],
                 ]
             ])
         ]
@@ -1120,7 +1125,7 @@ class TestCodecs(tb.ConnectedTestCase):
                     self.assertEqual(result, expected)
 
         with self.assertRaisesRegex(
-                asyncpg.DataError, 'expected a sequence'):
+                async_gaussdb.DataError, 'expected a sequence'):
             await self.con.fetch("SELECT $1::int4multirange", 1)
 
     @unittest.skip('GaussDB does not support Domain')
@@ -1158,7 +1163,7 @@ class TestCodecs(tb.ConnectedTestCase):
 
             self.assertEqual(res, {'foo': '2', 'bar': '3'})
 
-            with self.assertRaisesRegex(asyncpg.DataError,
+            with self.assertRaisesRegex(async_gaussdb.DataError,
                                         'null value not allowed'):
                 await self.con.fetchval('''
                     SELECT $1::hstore AS result
@@ -1188,7 +1193,7 @@ class TestCodecs(tb.ConnectedTestCase):
             # This should fail, as there is no binary codec for
             # my_dec_t and text decoding of composites is not
             # implemented.
-            with self.assertRaises(asyncpg.UnsupportedClientFeatureError):
+            with self.assertRaises(async_gaussdb.UnsupportedClientFeatureError):
                 res = await self.con.fetchval('''
                     SELECT ($1::my_dec_t, 'a=>1'::hstore)::rec_t AS result
                 ''', 44)
@@ -1249,7 +1254,7 @@ class TestCodecs(tb.ConnectedTestCase):
             self.assertEqual(at[0].type, pt[0])
 
             err = 'cannot use custom codec on type pg_catalog._hstore'
-            with self.assertRaisesRegex(asyncpg.InterfaceError, err):
+            with self.assertRaisesRegex(async_gaussdb.InterfaceError, err):
                 await self.con.set_type_codec('_hstore',
                                               schema='pg_catalog',
                                               encoder=hstore_encoder,
@@ -1313,7 +1318,7 @@ class TestCodecs(tb.ConnectedTestCase):
             return buffer
 
         try:
-            await self.con.set_type_codec('hstore', schema='pg_catalog', 
+            await self.con.set_type_codec('hstore', schema='pg_catalog',
                                           encoder=hstore_encoder,
                                           decoder=hstore_decoder,
                                           format='binary')
@@ -1346,7 +1351,7 @@ class TestCodecs(tb.ConnectedTestCase):
             #     DROP EXTENSION hstore
             # ''')
             pass
-        
+
     @unittest.skip('GaussDB does not support custom codec on domain')
     async def test_custom_codec_on_domain(self):
         """Test encoding/decoding using a custom codec on a domain."""
@@ -1357,7 +1362,7 @@ class TestCodecs(tb.ConnectedTestCase):
 
         try:
             with self.assertRaisesRegex(
-                asyncpg.UnsupportedClientFeatureError,
+                async_gaussdb.UnsupportedClientFeatureError,
                 'custom codecs on domain types are not supported'
             ):
                 await self.con.set_type_codec(
@@ -1423,7 +1428,7 @@ class TestCodecs(tb.ConnectedTestCase):
     async def test_custom_codec_on_enum_array(self):
         """Test encoding/decoding using a custom codec on an enum array.
 
-        Bug: https://github.com/MagicStack/asyncpg/issues/590
+        Bug: https://github.com/MagicStack/async_gaussdb/issues/590
         """
         await self.con.execute('DROP DOMAIN IF EXISTS custom_codec_t CASCADE')
         await self.con.execute('''
@@ -1540,7 +1545,7 @@ class TestCodecs(tb.ConnectedTestCase):
         ]
 
         conn = await self.connect()
-        
+
         def _encoder(value):
             return tuple(value)
 
@@ -1626,7 +1631,7 @@ class TestCodecs(tb.ConnectedTestCase):
 
         try:
             with self.assertRaisesRegex(
-                asyncpg.UnsupportedClientFeatureError,
+                async_gaussdb.UnsupportedClientFeatureError,
                 "only tuple-format codecs can be used on composite types",
             ):
                 await self.con.set_type_codec(
@@ -1654,8 +1659,12 @@ class TestCodecs(tb.ConnectedTestCase):
 
                 # Check encoding:
                 # Extract pure date from the datetime
-                pure_date = (row['date'].date() if hasattr(row['date'], 'date') 
-                            else row['date'])
+                pure_date = (
+                    row['date'].date()
+                    if hasattr(row['date'], 'date')
+                    else row['date']
+                )
+
                 res = await self.con.fetchval(
                     'SELECT now() = ($1::date + $2::timetz::time)',
                     pure_date, row['time'])
@@ -1735,14 +1744,22 @@ class TestCodecs(tb.ConnectedTestCase):
             CREATE USER "u7" PASSWORD 'Test.123456';
             CREATE USER norm1 PASSWORD 'Test.123456';
             CREATE USER norm2 PASSWORD 'Test.123456';
-            CREATE TABLE t0 (id int); GRANT SELECT ON t0 TO norm1;
-            CREATE TABLE t1 (id int); GRANT SELECT ON t1 TO "u1";
-            CREATE TABLE t2 (id int); GRANT SELECT ON t2 TO "u2";
-            CREATE TABLE t3 (id int); GRANT SELECT ON t3 TO "u3";
-            CREATE TABLE t4 (id int); GRANT SELECT ON t4 TO "u4";
-            CREATE TABLE t5 (id int); GRANT SELECT ON t5 TO "u5";
-            CREATE TABLE t6 (id int); GRANT SELECT ON t6 TO "u6";
-            CREATE TABLE t7 (id int); GRANT SELECT ON t7 TO "u7";
+            CREATE TABLE t0 (id int);
+            GRANT SELECT ON t0 TO norm1;
+            CREATE TABLE t1 (id int);
+            GRANT SELECT ON t1 TO "u1";
+            CREATE TABLE t2 (id int);
+            GRANT SELECT ON t2 TO "u2";
+            CREATE TABLE t3 (id int);
+            GRANT SELECT ON t3 TO "u3";
+            CREATE TABLE t4 (id int);
+            GRANT SELECT ON t4 TO "u4";
+            CREATE TABLE t5 (id int);
+            GRANT SELECT ON t5 TO "u5";
+            CREATE TABLE t6 (id int);
+            GRANT SELECT ON t6 TO "u6";
+            CREATE TABLE t7 (id int);
+            GRANT SELECT ON t7 TO "u7";
 
             CREATE TABLE public.a1 (id int);
                 GRANT SELECT ON a1 TO "u1";
@@ -1757,27 +1774,34 @@ class TestCodecs(tb.ConnectedTestCase):
 
             CREATE TABLE public.a2 (id int);
                 GRANT SELECT ON a2 TO "u1" WITH GRANT OPTION;
-                GRANT SELECT ON a2 TO "u2"   WITH GRANT OPTION;
-                GRANT SELECT ON a2 TO "u3"   WITH GRANT OPTION;
+                GRANT SELECT ON a2 TO "u2" WITH GRANT OPTION;
+                GRANT SELECT ON a2 TO "u3" WITH GRANT OPTION;
                 GRANT SELECT ON a2 TO "norm1" WITH GRANT OPTION;
-                GRANT SELECT ON a2 TO "u4"   WITH GRANT OPTION;
-                GRANT SELECT ON a2 TO "u5"  WITH GRANT OPTION;
+                GRANT SELECT ON a2 TO "u4" WITH GRANT OPTION;
+                GRANT SELECT ON a2 TO "u5" WITH GRANT OPTION;
                 GRANT SELECT ON a2 TO "u6" WITH GRANT OPTION;
-                GRANT SELECT ON a2 TO "u7"   WITH GRANT OPTION;
+                GRANT SELECT ON a2 TO "u7" WITH GRANT OPTION;
 
-            SET SESSION AUTHORIZATION "u1" PASSWORD 'Test.123456';  GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u1" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
-            SET SESSION AUTHORIZATION "u2" PASSWORD 'Test.123456';   GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u2" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
-            SET SESSION AUTHORIZATION "u3" PASSWORD 'Test.123456';   GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u3" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
-            SET SESSION AUTHORIZATION "u4" PASSWORD 'Test.123456';   GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u4" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
-            SET SESSION AUTHORIZATION "u5" PASSWORD 'Test.123456';  GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u5" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
-            SET SESSION AUTHORIZATION "u6" PASSWORD 'Test.123456'; GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u6" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
-            SET SESSION AUTHORIZATION "u7" PASSWORD 'Test.123456';   GRANT SELECT ON public.a2 TO "norm2";
+            SET SESSION AUTHORIZATION "u7" PASSWORD 'Test.123456';
+            GRANT SELECT ON public.a2 TO "norm2";
             RESET SESSION AUTHORIZATION;
         ''')
 
@@ -1893,7 +1917,7 @@ class TestCodecs(tb.ConnectedTestCase):
             # Text encoding of ranges and composite types
             # is not supported yet.
             with self.assertRaisesRegex(
-                    asyncpg.UnsupportedClientFeatureError,
+                    async_gaussdb.UnsupportedClientFeatureError,
                     'text encoding of range types is not supported'):
 
                 await self.con.fetchval('''
@@ -1902,7 +1926,7 @@ class TestCodecs(tb.ConnectedTestCase):
                 ''', ['a', 'z'])
 
             with self.assertRaisesRegex(
-                    asyncpg.UnsupportedClientFeatureError,
+                    async_gaussdb.UnsupportedClientFeatureError,
                     'text encoding of composite types is not supported'):
 
                 await self.con.fetchval('''
@@ -1967,7 +1991,7 @@ class TestCodecs(tb.ConnectedTestCase):
                 SELECT testtab.a FROM testtab WHERE testtab.b = $1
             ''', 'abc')
 
-            self.assertEqual(result, (asyncpg.Range(10, 20),))
+            self.assertEqual(result, (async_gaussdb.Range(10, 20),))
         finally:
             await self.con.execute('''
                 DROP TABLE testtab;
@@ -2074,7 +2098,7 @@ class TestCodecsLargeOIDs(tb.ConnectedTestCase):
 
             expected_oid = self.LARGE_OID
             if self.server_version >= (11, 0):
-                # PostgreSQL 11 automatically creates a domain array type
+                # GaussDBSQL 11 automatically creates a domain array type
                 # _before_ the domain type, so the expected OID is
                 # off by one.
                 expected_oid += 1

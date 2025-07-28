@@ -13,7 +13,7 @@ import re
 import string
 import textwrap
 
-from asyncpg.exceptions import _base as apg_exc
+from async_gaussdb.exceptions import _base as apg_exc
 
 
 _namemap = {
@@ -31,7 +31,7 @@ _namemap = {
 
 _subclassmap = {
     # Special subclass of FeatureNotSupportedError
-    # raised by Postgres in RevalidateCachedQuery.
+    # raised by GaussDB in RevalidateCachedQuery.
     '0A000': ['InvalidCachedStatementError']
 }
 
@@ -60,16 +60,16 @@ def _get_error_name(sqlstatename, msgtype, sqlstate):
     errname = ''.join(parts)
 
     if hasattr(builtins, errname):
-        errname = 'Postgres' + errname
+        errname = 'GaussDB' + errname
 
     return errname
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='generate _exceptions.py from postgres/errcodes.txt')
+        description='generate _exceptions.py from GaussDB/errcodes.txt')
     parser.add_argument('errcodesfile', type=str,
-                        help='path to errcodes.txt in PostgreSQL source')
+                        help='path to errcodes.txt in GaussDBSQL source')
 
     args = parser.parse_args()
 
@@ -85,7 +85,7 @@ class {clsname}({base}):
     new_section = True
     section_class = None
 
-    buf = '# GENERATED FROM postgresql/src/backend/utils/errcodes.txt\n' + \
+    buf = '# GENERATED FROM GaussDBsql/src/backend/utils/errcodes.txt\n' + \
           '# DO NOT MODIFY, use tools/generate_exceptions.py to update\n\n' + \
           'from ._base import *  # NOQA\nfrom . import _base\n\n\n'
 
@@ -138,22 +138,22 @@ class {clsname}({base}):
 
         if new_section:
             section_class = clsname
-            if clsname == 'PostgresWarning':
-                base = '_base.PostgresLogMessage, Warning'
+            if clsname == 'GaussDBWarning':
+                base = '_base.GaussDBLogMessage, Warning'
             else:
                 if msgtype == 'W':
-                    base = 'PostgresWarning'
+                    base = 'GaussDBWarning'
                 else:
-                    base = '_base.PostgresError'
+                    base = '_base.GaussDBError'
 
             new_section = False
         else:
             base = section_class
 
-        existing = apg_exc.PostgresMessageMeta.get_message_class_for_sqlstate(
+        existing = apg_exc.GaussDBMessageMeta.get_message_class_for_sqlstate(
             sqlstate)
 
-        if (existing and existing is not apg_exc.UnknownPostgresError and
+        if (existing and existing is not apg_exc.UnknownGaussDBError and
                 existing.__doc__):
             docstring = '"""{}"""\n\n    '.format(existing.__doc__)
         else:

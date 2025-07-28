@@ -11,9 +11,9 @@ import gc
 import pickle
 import sys
 
-import asyncpg
-from asyncpg import _testbase as tb
-from asyncpg.protocol.protocol import _create_record as Record
+import async_gaussdb
+from async_gaussdb import _testbase as tb
+from async_gaussdb.protocol.protocol import _create_record as Record
 
 
 R_A = collections.OrderedDict([('a', 0)])
@@ -22,11 +22,11 @@ R_AC = collections.OrderedDict([('a', 0), ('c', 1)])
 R_ABC = collections.OrderedDict([('a', 0), ('b', 1), ('c', 2)])
 
 
-class CustomRecord(asyncpg.Record):
+class CustomRecord(async_gaussdb.Record):
     pass
 
 
-class AnotherCustomRecord(asyncpg.Record):
+class AnotherCustomRecord(async_gaussdb.Record):
     pass
 
 
@@ -340,13 +340,13 @@ class TestRecord(tb.ConnectedTestCase):
     async def test_record_isinstance(self):
         """Test that Record works with isinstance."""
         r = await self.con.fetchrow('SELECT 1 as a, 2 as b')
-        self.assertTrue(isinstance(r, asyncpg.Record))
+        self.assertTrue(isinstance(r, async_gaussdb.Record))
 
     async def test_record_no_new(self):
         """Instances of Record cannot be directly created."""
         with self.assertRaisesRegex(
-                TypeError, "cannot create 'asyncpg.Record' instances"):
-            asyncpg.Record()
+                TypeError, "cannot create 'async_gaussdb.Record' instances"):
+            async_gaussdb.Record()
 
     @tb.with_connection_options(record_class=CustomRecord)
     async def test_record_subclass_01(self):
@@ -471,51 +471,51 @@ class TestRecord(tb.ConnectedTestCase):
     async def test_record_subclass_04(self):
         r = await self.con.fetchrow(
             "SELECT 1 as a, '2' as b",
-            record_class=asyncpg.Record,
+            record_class=async_gaussdb.Record,
         )
-        self.assertIs(type(r), asyncpg.Record)
+        self.assertIs(type(r), async_gaussdb.Record)
 
         r = await self.con.fetch(
             "SELECT 1 as a, '2' as b",
-            record_class=asyncpg.Record,
+            record_class=async_gaussdb.Record,
         )
-        self.assertIs(type(r[0]), asyncpg.Record)
+        self.assertIs(type(r[0]), async_gaussdb.Record)
 
         async with self.con.transaction():
             cur = await self.con.cursor(
                 "SELECT 1 as a, '2' as b",
-                record_class=asyncpg.Record,
+                record_class=async_gaussdb.Record,
             )
             r = await cur.fetchrow()
-            self.assertIs(type(r), asyncpg.Record)
+            self.assertIs(type(r), async_gaussdb.Record)
 
             cur = await self.con.cursor(
                 "SELECT 1 as a, '2' as b",
-                record_class=asyncpg.Record,
+                record_class=async_gaussdb.Record,
             )
             r = await cur.fetch(1)
-            self.assertIs(type(r[0]), asyncpg.Record)
+            self.assertIs(type(r[0]), async_gaussdb.Record)
 
         async with self.con.transaction():
             cur = self.con.cursor(
                 "SELECT 1 as a, '2' as b",
-                record_class=asyncpg.Record,
+                record_class=async_gaussdb.Record,
             )
             async for r in cur:
-                self.assertIs(type(r), asyncpg.Record)
+                self.assertIs(type(r), async_gaussdb.Record)
 
         ps = await self.con.prepare(
             "SELECT 1 as a, '2' as b",
-            record_class=asyncpg.Record,
+            record_class=async_gaussdb.Record,
         )
         r = await ps.fetchrow()
-        self.assertIs(type(r), asyncpg.Record)
+        self.assertIs(type(r), async_gaussdb.Record)
 
         r = await ps.fetch()
-        self.assertIs(type(r[0]), asyncpg.Record)
+        self.assertIs(type(r[0]), async_gaussdb.Record)
 
     async def test_record_subclass_05(self):
-        class MyRecord(asyncpg.Record):
+        class MyRecord(async_gaussdb.Record):
             pass
 
         r = await self.con.fetchrow(
@@ -532,11 +532,11 @@ class TestRecord(tb.ConnectedTestCase):
         self.assertEqual(next(iter(r)), 1)
 
     async def test_record_subclass_06(self):
-        class MyRecord(asyncpg.Record):
+        class MyRecord(async_gaussdb.Record):
             def __init__(self):
                 raise AssertionError('this is not supposed to be called')
 
-        class MyRecord2(asyncpg.Record):
+        class MyRecord2(async_gaussdb.Record):
             def __new__(cls):
                 raise AssertionError('this is not supposed to be called')
 
@@ -544,7 +544,7 @@ class TestRecord(tb.ConnectedTestCase):
             pass
 
         with self.assertRaisesRegex(
-            asyncpg.InterfaceError,
+            async_gaussdb.InterfaceError,
             'record_class must not redefine __new__ or __init__',
         ):
             await self.con.fetchrow(
@@ -553,7 +553,7 @@ class TestRecord(tb.ConnectedTestCase):
             )
 
         with self.assertRaisesRegex(
-            asyncpg.InterfaceError,
+            async_gaussdb.InterfaceError,
             'record_class must not redefine __new__ or __init__',
         ):
             await self.con.fetchrow(
@@ -562,8 +562,8 @@ class TestRecord(tb.ConnectedTestCase):
             )
 
         with self.assertRaisesRegex(
-            asyncpg.InterfaceError,
-            'record_class is expected to be a subclass of asyncpg.Record',
+            async_gaussdb.InterfaceError,
+            'record_class is expected to be a subclass of async_gaussdb.Record',
         ):
             await self.con.fetchrow(
                 "SELECT 1 as a, '2' as b",
@@ -571,7 +571,7 @@ class TestRecord(tb.ConnectedTestCase):
             )
 
         with self.assertRaisesRegex(
-            asyncpg.InterfaceError,
-            'record_class is expected to be a subclass of asyncpg.Record',
+            async_gaussdb.InterfaceError,
+            'record_class is expected to be a subclass of async_gaussdb.Record',
         ):
             await self.connect(record_class=MyRecordBad)

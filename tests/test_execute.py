@@ -6,10 +6,10 @@
 
 
 import asyncio
-import asyncpg
+import async_gaussdb
 
-from asyncpg import _testbase as tb
-from asyncpg import exceptions
+from async_gaussdb import _testbase as tb
+from async_gaussdb import exceptions
 
 
 class TestExecuteScript(tb.ConnectedTestCase):
@@ -41,22 +41,20 @@ class TestExecuteScript(tb.ConnectedTestCase):
             await self.con.execute('DROP TABLE mytab')
 
     async def test_execute_script_3(self):
-        with self.assertRaisesRegex(asyncpg.PostgresSyntaxError,
+        with self.assertRaisesRegex(async_gaussdb.GaussDBSyntaxError,
                                     'cannot insert multiple commands'):
-
             await self.con.execute('''
                 CREATE TABLE mytab (a int);
                 INSERT INTO mytab (a) VALUES ($1), ($2);
             ''', 10, 20)
 
     async def test_execute_script_check_transactionality(self):
-        with self.assertRaises(asyncpg.PostgresError):
+        with self.assertRaises(async_gaussdb.GaussDBError):
             await self.con.execute('''
                 CREATE TABLE mytab (a int);
                 SELECT * FROM mytab WHERE 1 / 0 = 1;
             ''')
-
-        with self.assertRaisesRegex(asyncpg.PostgresError,
+        with self.assertRaisesRegex(async_gaussdb.GaussDBError,
                                     '"mytab" does not exist'):
 
             await self.con.prepare('''
@@ -64,7 +62,7 @@ class TestExecuteScript(tb.ConnectedTestCase):
             ''')
 
     async def test_execute_exceptions_1(self):
-        with self.assertRaisesRegex(asyncpg.PostgresError,
+        with self.assertRaisesRegex(async_gaussdb.GaussDBError,
                                     'relation "__dne__" does not exist'):
 
             await self.con.execute('select * from __dne__')
@@ -79,7 +77,7 @@ class TestExecuteScript(tb.ConnectedTestCase):
         await self.con.close()
         self.assertTrue(self.con.is_closed())
 
-        with self.assertRaises(asyncpg.QueryCanceledError):
+        with self.assertRaises(async_gaussdb.QueryCanceledError):
             await fut
 
     async def test_execute_script_interrupted_terminate(self):
@@ -92,7 +90,7 @@ class TestExecuteScript(tb.ConnectedTestCase):
         self.con.terminate()
         self.assertTrue(self.con.is_closed())
 
-        with self.assertRaisesRegex(asyncpg.ConnectionDoesNotExistError,
+        with self.assertRaisesRegex(async_gaussdb.ConnectionDoesNotExistError,
                                     'closed in the middle'):
             await fut
 
@@ -252,7 +250,7 @@ class TestExecuteMany(tb.ConnectedTestCase):
             ''', gen())
         result = await self.con.fetch('SELECT b FROM exmany')
         self.assertEqual(result, [])
-        # openGauss may stop processing earlier than PostgreSQL
+        # openGauss may stop processing earlier than GaussdbSQL
         # The important thing is that the error is handled correctly
         # self.assertEqual(pos, 128, 'should stop early')
         self.assertGreater(pos, 0, 'should have processed some items')

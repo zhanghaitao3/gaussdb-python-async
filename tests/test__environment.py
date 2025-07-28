@@ -8,10 +8,10 @@
 import os
 import unittest
 
-import asyncpg
-import asyncpg.serverversion
+import async_gaussdb
+import async_gaussdb.serverversion
 
-from asyncpg import _testbase as tb
+from async_gaussdb import _testbase as tb
 
 
 class TestEnvironment(tb.ConnectedTestCase):
@@ -19,23 +19,23 @@ class TestEnvironment(tb.ConnectedTestCase):
                      "environ[PGVERSION] is not set")
     async def test_environment_server_version(self):
         pgver = os.environ.get('PGVERSION')
-        env_ver = asyncpg.serverversion.split_server_version_string(pgver)
+        env_ver = async_gaussdb.serverversion.split_server_version_string(pgver)
         srv_ver = self.con.get_server_version()
 
         self.assertEqual(
             env_ver[:2], srv_ver[:2],
-            'Expecting PostgreSQL version {pgver}, got {maj}.{min}.'.format(
+            'Expecting GaussDBSQL version {pgver}, got {maj}.{min}.'.format(
                 pgver=pgver, maj=srv_ver.major, min=srv_ver.minor)
         )
 
-    @unittest.skipIf(not os.environ.get('ASYNCPG_VERSION'),
-                     "environ[ASYNCPG_VERSION] is not set")
-    @unittest.skipIf("dev" in asyncpg.__version__,
+    @unittest.skipIf(not os.environ.get('async_gaussdb_VERSION'),
+                     "environ[async_gaussdb_VERSION] is not set")
+    @unittest.skipIf("dev" in async_gaussdb.__version__,
                      "development version with git commit data")
-    async def test_environment_asyncpg_version(self):
-        apgver = os.environ.get('ASYNCPG_VERSION')
+    async def test_environment_async_gaussdb_version(self):
+        apgver = os.environ.get('async_gaussdb_VERSION')
         self.assertEqual(
-            asyncpg.__version__, apgver,
-            'Expecting asyncpg version {}, got {}.'.format(
-                apgver, asyncpg.__version__)
+            async_gaussdb.__version__, apgver,
+            'Expecting async_gaussdb version {}, got {}.'.format(
+                apgver, async_gaussdb.__version__)
         )

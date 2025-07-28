@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 version_file = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                            'asyncpg', '_version.py')
+                            'async_gaussdb', '_version.py')
 
 with open(version_file, 'r') as f:
     for line in f:
@@ -16,7 +16,7 @@ with open(version_file, 'r') as f:
             break
     else:
         raise RuntimeError(
-            'unable to read the version from asyncpg/_version.py')
+            'unable to read the version from async_gaussdb/_version.py')
 
 # -- General configuration ------------------------------------------------
 
@@ -33,7 +33,7 @@ add_module_names = False
 templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
-project = 'asyncpg'
+project = 'async_gaussdb'
 copyright = '2016-present, the asyncpg authors and contributors'
 author = '<See AUTHORS file>'
 release = version
@@ -46,8 +46,8 @@ suppress_warnings = ['image.nonlocal_uri']
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = 'sphinx_rtd_theme'
-html_title = 'asyncpg Documentation'
-html_short_title = 'asyncpg'
+html_title = 'async_gaussdb Documentation'
+html_short_title = 'async_gaussdb'
 html_static_path = ['_static']
 html_sidebars = {
     '**': [
@@ -58,7 +58,7 @@ html_sidebars = {
 html_show_sourcelink = False
 html_show_sphinx = False
 html_show_copyright = True
-htmlhelp_basename = 'asyncpgdoc'
+htmlhelp_basename = 'async_gaussdbdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -66,7 +66,7 @@ htmlhelp_basename = 'asyncpgdoc'
 latex_elements = {}
 
 latex_documents = [
-    (master_doc, 'asyncpg.tex', 'asyncpg Documentation',
+    (master_doc, 'async_gaussdb.tex', 'async_gaussdb Documentation',
      author, 'manual'),
 ]
 
@@ -74,7 +74,7 @@ latex_documents = [
 # -- Options for manual page output ---------------------------------------
 
 man_pages = [
-    (master_doc, 'asyncpg', 'asyncpg Documentation',
+    (master_doc, 'async_gaussdb', 'async_gaussdb Documentation',
      [author], 1)
 ]
 
@@ -82,9 +82,9 @@ man_pages = [
 # -- Options for Texinfo output -------------------------------------------
 
 texinfo_documents = [
-    (master_doc, 'asyncpg', 'asyncpg Documentation',
-     author, 'asyncpg',
-     'asyncpg is a fast PostgreSQL client library for the '
+    (master_doc, 'async_gaussdb', 'async_gaussdb Documentation',
+     author, 'async_gaussdb',
+     'async_gaussdb is a fast GaussDB client library for the '
      'Python asyncio framework',
      'Miscellaneous'),
 ]

@@ -6,9 +6,9 @@
 
 
 import asyncio
-import asyncpg
+import async_gaussdb
 
-from asyncpg import _testbase as tb
+from async_gaussdb import _testbase as tb
 
 
 class TestCancellation(tb.ConnectedTestCase):
@@ -72,7 +72,7 @@ class TestCancellation(tb.ConnectedTestCase):
         self.assertEqual(await task, [(1,)])
 
     async def test_cancellation_03(self):
-        with self.assertRaises(asyncpg.InFailedSQLTransactionError):
+        with self.assertRaises(async_gaussdb.InFailedSQLTransactionError):
             async with self.con.transaction():
                 task = self.loop.create_task(
                     self.con.fetch('SELECT pg_sleep(20)'))
