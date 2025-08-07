@@ -62,11 +62,6 @@ jobs:
         version_line_pattern: |
           __version__(?:\s*:\s*typing\.Final)?\s*=\s*(?:['"])([[:PEP440:]])(?:['"])
 
-    - name: Setup PostgreSQL
-      if: "!steps.release.outputs.is_release && matrix.os == 'macos-latest'"
-      run: |
-        brew install postgresql
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       if: "!steps.release.outputs.is_release"
@@ -84,7 +79,6 @@ jobs:
       env:
         GSQL_PASSWORD: Test@123
       run: |
-        source venv/bin/activate
         for i in {1..30}; do
           pg_isready -h localhost -p 5432 -U testuser && break
           sleep 10
