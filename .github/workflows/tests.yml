@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         loop: [asyncio, uvloop]
         exclude:
           # uvloop does not support windows
@@ -33,6 +33,18 @@ jobs:
 
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
+    services:
+          opengauss:
+            image: opengauss/opengauss-server:latest
+            ports:
+              - 5432:5432
+            env:
+              GS_USERNAME: testuser
+              GS_USER_PASSWORD: Test@123
+              GS_PASSWORD: Test@123
+            options: >-
+              --privileged=true
+              --name opengauss-custom
 
     steps:
     - uses: actions/checkout@v4
@@ -49,11 +61,6 @@ jobs:
         version_file: async_gaussdb/_version.py
         version_line_pattern: |
           __version__(?:\s*:\s*typing\.Final)?\s*=\s*(?:['"])([[:PEP440:]])(?:['"])
-
-    - name: Setup PostgreSQL
-      if: "!steps.release.outputs.is_release && matrix.os == 'macos-latest'"
-      run: |
-        brew install postgresql
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -67,11 +74,29 @@ jobs:
         [ "$RUNNER_OS" = "Linux" ] && .github/workflows/install-krb5.sh
         python -m pip install -U pip setuptools wheel
         python -m pip install -e .[test]
+    
+    - name: Wait for openGauss to be ready
+      env:
+        GSQL_PASSWORD: Test@123
+      run: |
+        for i in {1..30}; do
+          pg_isready -h localhost -p 5432 -U testuser && break
+          sleep 10
+        done
+        if ! pg_isready -h localhost -p 5432 -U testuser; then
+          echo "openGauss is not ready"
+          exit 1
+        fi
+          
+    - name: Create test database
+      run: |
+        docker exec opengauss-custom bash -c "su - omm -c 'gsql -d postgres -c \"CREATE DATABASE test ;\"'"
 
     - name: Test
       if: "!steps.release.outputs.is_release"
       env:
         LOOP_IMPL: ${{ matrix.loop }}
+        GAUSSDB_TEST_DSN: "host=127.0.0.1 port=5432 dbname=test user=testuser password=Test@123 "
       run: |
         if [ "${LOOP_IMPL}" = "uvloop" ]; then
           env USE_UVLOOP=1 python -m unittest -v tests.suite
@@ -79,68 +104,11 @@ jobs:
           python -m unittest -v tests.suite
         fi
 
-  test-postgres:
-    strategy:
-      matrix:
-        postgres-version: ["9.5", "9.6", "10", "11", "12", "13", "14", "15", "16", "17"]
-
-    runs-on: ubuntu-latest
-
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 50
-        submodules: true
-
-    - name: Check if release PR.
-      uses: edgedb/action-release/validate-pr@master
-      id: release
-      with:
-        github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
-        missing_version_ok: yes
-        version_file: async_gaussdb/_version.py
-        version_line_pattern: |
-          __version__(?:\s*:\s*typing\.Final)?\s*=\s*(?:['"])([[:PEP440:]])(?:['"])
-
-    - name: Set up PostgreSQL
-      if: "!steps.release.outputs.is_release"
-      env:
-        PGVERSION: ${{ matrix.postgres-version }}
-        DISTRO_NAME: focal
-      run: |
-        sudo env DISTRO_NAME="${DISTRO_NAME}" PGVERSION="${PGVERSION}" \
-          .github/workflows/install-postgres.sh
-        echo PGINSTALLATION="/usr/lib/postgresql/${PGVERSION}/bin" \
-          >> "${GITHUB_ENV}"
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      if: "!steps.release.outputs.is_release"
-      with:
-        python-version: "3.x"
-
-    - name: Install Python Deps
-      if: "!steps.release.outputs.is_release"
-      run: |
-        [ "$RUNNER_OS" = "Linux" ] && .github/workflows/install-krb5.sh
-        python -m pip install -U pip setuptools wheel
-        python -m pip install -e .[test]
-
-    - name: Test
-      if: "!steps.release.outputs.is_release"
-      env:
-        PGVERSION: ${{ matrix.postgres-version }}
-      run: |
-        python -m unittest -v tests.suite
-
   # This job exists solely to act as the test job aggregate to be
   # targeted by branch policies.
   regression-tests:
     name: "Regression Tests"
-    needs: [test-platforms, test-postgres]
+    needs: [test-platforms]
     runs-on: ubuntu-latest
 
     steps:
