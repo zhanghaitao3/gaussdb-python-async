@@ -141,7 +141,7 @@ CORRECT_PASSWORD = 'correct\u1680password'
 
 
 class BaseTestAuthentication(tb.ConnectedTestCase):
-    USERS = []
+    USERS = ["testuser"]
 
     def setUp(self):
         super().setUp()
