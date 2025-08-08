@@ -96,7 +96,11 @@ jobs:
       if: "!steps.release.outputs.is_release"
       env:
         LOOP_IMPL: ${{ matrix.loop }}
-        GAUSSDB_TEST_DSN: "host=127.0.0.1 port=5432 dbname=test user=testuser password=Test@123 "
+        PGHOST: "127.0.0.1"
+        PGPORT: 5432
+        PGUSER: "testuser"
+        PGPASSWORD: "Test@123"
+        PGDATABASE: "test"
       run: |
         if [ "${LOOP_IMPL}" = "uvloop" ]; then
           env USE_UVLOOP=1 python -m unittest -v tests.suite
