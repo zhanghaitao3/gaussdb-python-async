@@ -90,7 +90,7 @@ jobs:
           
     - name: Create test database
       run: |
-        docker exec opengauss-custom bash -c "su - omm -c 'gsql -d postgres -c \"CREATE DATABASE test ;\"'"
+        docker exec opengauss-custom bash -c "su - omm -c 'gsql -d postgres -c \"CREATE DATABASE test ;CREATE user user ;\"'"
 
     - name: Test
       if: "!steps.release.outputs.is_release"
