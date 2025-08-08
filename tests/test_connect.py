@@ -411,7 +411,6 @@ class TestGssAuthentication(BaseTestAuthentication):
         # Add credentials.
         cls.realm.addprinc('gaussdb/localhost')
         cls.realm.extract_keytab('gaussdb/localhost', cls.realm.keytab)
-        cls.cluster.execute_sql(f"CREATE USER {cls.realm.user_princ} WITH LOGIN;")
         cls.USERS = [
             (cls.realm.user_princ, 'gss', None),
             (f'wrong-{cls.realm.user_princ}', 'gss', None),
@@ -433,6 +432,7 @@ class TestGssAuthentication(BaseTestAuthentication):
             cls.cluster, server_settings=cls.get_server_settings())
 
     async def test_auth_gssapi_ok(self):
+        print(f"test_auth_gssapi_ok {self.realm.user_princ}")
         conn = await self.connect(user=self.realm.user_princ)
         await conn.close()
 
@@ -442,6 +442,7 @@ class TestGssAuthentication(BaseTestAuthentication):
             exceptions.InternalClientError,
             'Server .* not found'
         ):
+            print(f"test_auth_gssapi_bad_srvname {self.realm.user_princ}")
             await self.connect(user=self.realm.user_princ, krbsrvname='wrong')
 
     async def test_auth_gssapi_bad_user(self):
@@ -450,6 +451,7 @@ class TestGssAuthentication(BaseTestAuthentication):
             exceptions.InvalidAuthorizationSpecificationError,
             'GSSAPI authentication failed for user'
         ):
+            print(f"test_auth_gssapi_bad_user {self.realm.user_princ}")
             await self.connect(user=f'wrong-{self.realm.user_princ}')
 
 
