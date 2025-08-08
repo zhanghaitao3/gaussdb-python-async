@@ -411,7 +411,9 @@ class TestGssAuthentication(BaseTestAuthentication):
         # Add credentials.
         cls.realm.addprinc('gaussdb/localhost')
         cls.realm.extract_keytab('gaussdb/localhost', cls.realm.keytab)
-
+        print(f"Debug: realm.user_princ = {cls.realm.user_princ}")  # 调试输出
+        username = cls.realm.user_princ.split('@')[0] if '@' in cls.realm.user_princ else cls.realm.user_princ
+        print(f"Debug: extracted username = {username}")  # 调试输出
         cls.USERS = [
             (cls.realm.user_princ, 'gss', None),
             (f'wrong-{cls.realm.user_princ}', 'gss', None),
