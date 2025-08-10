@@ -24,8 +24,6 @@ import urllib.parse
 import warnings
 import weakref
 
-import distro
-
 import async_gaussdb
 from async_gaussdb import _testbase as tb
 from async_gaussdb import connection as pg_connection
