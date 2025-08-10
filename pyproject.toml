@@ -90,7 +90,7 @@ before-all = """
 test-command = """\
     PY=`which python` \
     && chmod -R go+rX "$(dirname $(dirname $(dirname $PY)))" \
-    && su -l apgtest -c "$PY {project}/tests/__init__.py" \
+    && $PY {project}/tests/__init__.py \
     """
 
 [tool.pytest.ini_options]
