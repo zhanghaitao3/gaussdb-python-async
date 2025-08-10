@@ -76,7 +76,6 @@ build-frontend = "build"
 test-extras = "test"
 
 [tool.cibuildwheel.macos]
-before-all = ".github/workflows/install-postgres.sh"
 test-command = "python {project}/tests/__init__.py"
 
 [tool.cibuildwheel.windows]
@@ -84,8 +83,7 @@ test-command = "python {project}\\tests\\__init__.py"
 
 [tool.cibuildwheel.linux]
 before-all = """
-    .github/workflows/install-postgres.sh \
-    && .github/workflows/install-krb5.sh \
+    .github/workflows/install-krb5.sh 
     """
 test-command = """\
     PY=`which python` \
