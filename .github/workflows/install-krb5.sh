@@ -24,7 +24,7 @@ if [[ $OSTYPE == linux* ]]; then
         export DEBIAN_FRONTEND=noninteractive
 
         $SUDO apt-get update
-        $SUDO apt-get install -y --no-install-recommends \
+        $SUDO apt-get install -y --no-install-recommends  --fix-missing\
             libkrb5-dev krb5-user krb5-kdc krb5-admin-server
     elif [ "${ID}" = "almalinux" ]; then
         $SUDO dnf install -y krb5-server krb5-workstation krb5-libs krb5-devel

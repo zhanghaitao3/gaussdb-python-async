@@ -141,10 +141,14 @@ CORRECT_PASSWORD = 'correct\u1680password'
 
 
 class BaseTestAuthentication(tb.ConnectedTestCase):
-    USERS = []
+    USERS = [ ('testuser', 'md5', 'Test@123')]
 
     def setUp(self):
+        opts = self.get_connection_spec()
+        opts['user'] = 'postgres'
+        opts.pop('password', None)  # 如果不需要密码
         super().setUp()
+        self.con = self.loop.run_until_complete(self.connect(**opts))
 
         if not self.cluster.is_managed():
             self.skipTest('unmanaged cluster')
