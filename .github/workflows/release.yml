@@ -105,41 +105,6 @@ jobs:
           name: dist
           delete-merged: true
 
-  publish-docs:
-    needs: [build-sdist, build-wheels]
-    runs-on: ubuntu-latest
-
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
-
-    steps:
-    - name: Checkout source
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 5
-        submodules: true
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-
-    - name: Build docs
-      run: |
-        pip install -e .[docs]
-        make htmldocs
-
-    - name: Checkout gh-pages
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 5
-        ref: gh-pages
-        path: docs/gh-pages
-
-    - name: Sync docs
-      run: |
-        rsync -a docs/_build/html/ docs/gh-pages/current/
-
   publish:
     needs: [build-sdist, build-wheels, publish-docs]
     runs-on: ubuntu-latest
