@@ -115,4 +115,5 @@ This library includes enhanced support for GaussDB and openGauss databases:
 
     asyncio.run(run())
 
-asyncpg is developed and distributed under the Apache 2.0 license.
+asyncpg is developed and distributed under the Apache 2.0 license 
+by MagicStack Inc. and the openGauss community.
