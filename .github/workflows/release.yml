@@ -140,17 +140,6 @@ jobs:
       run: |
         rsync -a docs/_build/html/ docs/gh-pages/current/
 
-    - name: Commit and push docs
-      uses: magicstack/gha-commit-and-push@master
-      with:
-        target_branch: gh-pages
-        workdir: docs/gh-pages
-        commit_message: Automatic documentation update
-        github_token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
-        ssh_key: ${{ secrets.RELEASE_BOT_SSH_KEY }}
-        gpg_key: ${{ secrets.RELEASE_BOT_GPG_KEY }}
-        gpg_key_id: "5C468778062D87BF!"
-
   publish:
     needs: [build-sdist, build-wheels, publish-docs]
     runs-on: ubuntu-latest
@@ -179,7 +168,6 @@ jobs:
       id: relver
       run: |
         set -e
-        # 从标签中提取版本
         echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
     - name: Merge and tag the PR
@@ -198,7 +186,7 @@ jobs:
       with:
         tag_name: v${{ steps.relver.outputs.version }}
         release_name: v${{ steps.relver.outputs.version }}
-        target: ${{ github.ref }}  # 使用提交的标签作为目标
+        target: ${{ github.ref }}  
         body: "Release v${{ steps.relver.outputs.version }}"
 
     - run: |
