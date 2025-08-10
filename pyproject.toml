@@ -60,11 +60,6 @@ include = ["async_gaussdb", "async_gaussdb.*"]
 [tool.setuptools.exclude-package-data]
 "*" = ["*.c", "*.h"]
 
-[tool.pytest.ini_options]
-addopts = "--capture=no --assert=plain --strict-markers --tb=native --import-mode=importlib"
-testpaths = "tests"
-filterwarnings = "default"
-
 [tool.mypy]
 exclude = [
     "^.eggs",
