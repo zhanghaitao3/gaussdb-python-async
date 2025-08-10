@@ -106,7 +106,7 @@ jobs:
           delete-merged: true
 
   publish:
-    needs: [build-sdist, build-wheels, publish-docs]
+    needs: [build-sdist, build-wheels]
     runs-on: ubuntu-latest
 
     environment:
