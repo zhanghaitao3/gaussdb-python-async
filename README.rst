@@ -1,4 +1,4 @@
-async_gaussdb-gaussdb -- A fast GaussDB/openGauss Database Client Library for Python/asyncio
+async_gaussdb -- A fast GaussDB/openGauss Database Client Library for Python/asyncio
 =====================================================================================
 
 .. image:: https://github.com/MagicStack/async_gaussdb/workflows/Tests/badge.svg
@@ -7,12 +7,12 @@ async_gaussdb-gaussdb -- A fast GaussDB/openGauss Database Client Library for Py
 .. image:: https://img.shields.io/pypi/v/async_gaussdb.svg
    :target: https://pypi.python.org/pypi/async_gaussdb
 
-**async_gaussdb-gaussdb** is a database interface library designed specifically for
+**async_gaussdb** is a database interface library designed specifically for
 GaussDB and openGauss databases with Python/asyncio. This fork of async_gaussdb is
 optimized for GaussDB/openGauss compatibility, including native SHA256
 authentication support and enhanced features for enterprise database environments.
 
-async_gaussdb-gaussdb requires Python 3.8 or later and is specifically designed for
+async_gaussdb requires Python 3.8 or later and is specifically designed for
 GaussDB and openGauss databases. It includes compatibility fixes and
 optimizations for openGauss-specific features and enterprise database requirements.
 
@@ -27,7 +27,7 @@ optimizations for openGauss-specific features and enterprise database requiremen
 Features
 --------
 
-async_gaussdb-gaussdb implements the GaussDB/openGauss server protocol natively and
+async_gaussdb implements the GaussDB/openGauss server protocol natively and
 exposes its features directly, optimized for enterprise database environments:
 
 * **SHA256 authentication** - Native support for GaussDB/openGauss authentication
@@ -44,7 +44,7 @@ exposes its features directly, optimized for enterprise database environments:
 Installation
 ------------
 
-async_gaussdb-gaussdb is available on PyPI. When not using GSSAPI/SSPI authentication it
+async_gaussdb is available on PyPI. When not using GSSAPI/SSPI authentication it
 has no dependencies. Use pip to install::
 
     $ pip install async-gaussdb
