@@ -24,8 +24,6 @@ import urllib.parse
 import warnings
 import weakref
 
-import distro
-
 import async_gaussdb
 from async_gaussdb import _testbase as tb
 from async_gaussdb import connection as pg_connection
@@ -394,8 +392,7 @@ class TestAuthentication(BaseTestAuthentication):
             await self.connect(user='md5_user', password=CORRECT_PASSWORD)
 
 
-@unittest.skipIf(
-    distro.id() == "alpine",
+@unittest.skip(
     "Alpine Linux ships GaussDBSQL without GSS auth support",
 )
 class TestGssAuthentication(BaseTestAuthentication):
@@ -415,7 +412,6 @@ class TestGssAuthentication(BaseTestAuthentication):
         # Add credentials.
         cls.realm.addprinc('gaussdb/localhost')
         cls.realm.extract_keytab('gaussdb/localhost', cls.realm.keytab)
-
         cls.USERS = [
             (cls.realm.user_princ, 'gss', None),
             (f'wrong-{cls.realm.user_princ}', 'gss', None),
