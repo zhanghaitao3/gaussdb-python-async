@@ -390,8 +390,7 @@ class TestAuthentication(BaseTestAuthentication):
             await self.connect(user='md5_user', password=CORRECT_PASSWORD)
 
 
-@unittest.skipIf(
-    distro.id() == "alpine",
+@unittest.skip(
     "Alpine Linux ships GaussDBSQL without GSS auth support",
 )
 class TestGssAuthentication(BaseTestAuthentication):
@@ -432,7 +431,6 @@ class TestGssAuthentication(BaseTestAuthentication):
             cls.cluster, server_settings=cls.get_server_settings())
 
     async def test_auth_gssapi_ok(self):
-        print(f"test_auth_gssapi_ok {self.realm.user_princ}")
         conn = await self.connect(user=self.realm.user_princ)
         await conn.close()
 
@@ -442,7 +440,6 @@ class TestGssAuthentication(BaseTestAuthentication):
             exceptions.InternalClientError,
             'Server .* not found'
         ):
-            print(f"test_auth_gssapi_bad_srvname {self.realm.user_princ}")
             await self.connect(user=self.realm.user_princ, krbsrvname='wrong')
 
     async def test_auth_gssapi_bad_user(self):
@@ -451,7 +448,6 @@ class TestGssAuthentication(BaseTestAuthentication):
             exceptions.InvalidAuthorizationSpecificationError,
             'GSSAPI authentication failed for user'
         ):
-            print(f"test_auth_gssapi_bad_user {self.realm.user_princ}")
             await self.connect(user=f'wrong-{self.realm.user_princ}')
 
 
