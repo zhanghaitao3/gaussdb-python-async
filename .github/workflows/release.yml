@@ -31,9 +31,10 @@ jobs:
         pip install -U setuptools wheel pip
         python setup.py sdist
 
-    - uses: actions/upload-artifact@v4
+    - name: Upload source distribution artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: dist-sdist
+        name: dist-sdist  
         path: dist/*.tar.*
 
   build-wheels-matrix:
@@ -90,7 +91,8 @@ jobs:
       env:
         CIBW_BUILD_VERBOSITY: 1
 
-    - uses: actions/upload-artifact@v4
+    - name: Upload wheel artifacts
+      uses: actions/upload-artifact@v4
       with:
         name: dist-wheels-${{ matrix.only }}
         path: wheelhouse/*.whl
@@ -124,9 +126,10 @@ jobs:
         fetch-depth: 5
         submodules: false
 
-    - uses: actions/download-artifact@v4
+    - name: Download merged artifacts
+      uses: actions/download-artifact@v4
       with:
-        name: dist
+        name: dist  
         path: dist/
 
     - name: Extract Release Version
@@ -155,7 +158,7 @@ jobs:
         body: "Release v${{ steps.relver.outputs.version }}"
 
     - run: |
-        ls -al dist/
+        ls -al dist/  
 
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
