@@ -24,27 +24,6 @@ optimizations for openGauss-specific features and enterprise database requiremen
 * Comprehensive test suite adapted for openGauss
 
 
-Documentation
--------------
-
-The project documentation can be found
-`here <https://magicstack.github.io/async_gaussdb/current/>`_.
-
-
-Performance
------------
-
-async_gaussdb-gaussdb maintains the high performance characteristics of the original
-async_gaussdb library while being optimized for GaussDB/openGauss environments.
-
-.. image:: https://raw.githubusercontent.com/MagicStack/async_gaussdb/master/performance.png?fddca40ab0
-    :target: https://gistpreview.github.io/?0ed296e93523831ea0918d42dd1258c2
-
-The above results are a geometric mean of benchmarks obtained with PostgreSQL
-`client driver benchmarking toolbench <https://github.com/MagicStack/pgbench>`_
-in June 2023 (click on the chart to see full details).
-
-
 Features
 --------
 
@@ -137,21 +116,4 @@ This library includes enhanced support for GaussDB and openGauss databases:
     asyncio.run(run())
 
 
-Development with Docker
-----------------------
-
-A Dockerfile is provided for development with openGauss:
-
-.. code-block:: bash
-
-    # Build the development image
-    docker build -t async_gaussdb-gaussdb-dev .
-    
-    # Run the container
-    docker run -it async_gaussdb-gaussdb-dev
-
-
-License
--------
-
-async_gaussdb-gaussdb is developed and distributed under the Apache 2.0 license.
+asyncpg is developed and distributed under the Apache 2.0 license.
