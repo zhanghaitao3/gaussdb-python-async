@@ -129,7 +129,7 @@ jobs:
         run: |
           mkdir -p all_dist
           mv dist/*.tar.* all_dist/  # 只移动正确格式的源分发包
-          mv wheelhouse/*.whl all_dist/  # 确保只移动 Wheel 文件
+          mv dist/*.whl all_dist/  # 确保只移动 Wheel 文件
           ls -l all_dist/  # 调试输出包内容
 
       - name: Upload all dist/* to GitHub Release
