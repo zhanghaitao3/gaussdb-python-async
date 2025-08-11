@@ -150,8 +150,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: all_dist/*
-      env:
-        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
     - name: Upload to PyPI
       if: startsWith(github.ref, 'refs/tags/')
