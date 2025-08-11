@@ -3,10 +3,10 @@ name: Release
 on:
   push:
     tags:
-      - "*"  # 仅在标签推送时触发
+      - "*"  # 触发所有标签的推送事件
 
 permissions:
-  contents: write
+  contents: write  # 允许对内容的写入权限
 
 jobs:
   build-sdist:
@@ -16,26 +16,26 @@ jobs:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 50
-          submodules: true
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 50
+        submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
 
-      - name: Build source distribution
-        run: |
-          pip install -U setuptools wheel pip
-          python setup.py sdist
+    - name: Build source distribution
+      run: |
+        pip install -U setuptools wheel pip
+        python setup.py sdist
 
-      - name: Upload source distribution artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-sdist  
-          path: dist/*.tar.*
+    - name: Upload source distribution artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-sdist  
+        path: dist/*.tar.*
 
   build-wheels-matrix:
     runs-on: ubuntu-latest
@@ -76,26 +76,26 @@ jobs:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 50
-          submodules: true
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 50
+        submodules: true
 
-      - name: Set up QEMU
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v2
+    - name: Set up QEMU
+      if: runner.os == 'Linux'
+      uses: docker/setup-qemu-action@v2
 
-      - uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b 
-        with:
-          only: ${{ matrix.only }}
-        env:
-          CIBW_BUILD_VERBOSITY: 1
+    - uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b 
+      with:
+        only: ${{ matrix.only }}
+      env:
+        CIBW_BUILD_VERBOSITY: 1
 
-      - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-wheels-${{ matrix.only }}
-          path: wheelhouse/*.whl
+    - name: Upload wheel artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-wheels-${{ matrix.only }}
+        path: wheelhouse/*.whl
 
   merge-artifacts:
     runs-on: ubuntu-latest
@@ -121,37 +121,54 @@ jobs:
       deployments: write
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 5
-          submodules: false
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 5
+        submodules: false
 
-      - name: Download merged artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist  
-          path: dist/
+    - name: Download merged artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist  
+        path: dist/
 
-      - name: Extract Release Version
-        id: relver
-        run: |
-          set -e
-          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    - name: Extract Release Version
+      id: relver
+      run: |
+        set -e
+        echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "Extracted version: ${{ steps.relver.outputs.version }}"
 
-      - name: Publish GitHub Release
-        uses: elprans/gh-action-create-release@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN  }}
-        with:
-          tag_name: v${{ steps.relver.outputs.version }}
-          release_name: v${{ steps.relver.outputs.version }}
-          target: ${{ github.ref }}  
-          body: "Release v${{ steps.relver.outputs.version }}"
+    - name: Check Version and Merge
+      run: |
+        if [[ -z "${{ steps.relver.outputs.version }}" ]]; then
+          echo "Error: Version is empty. Exiting."
+          exit 1
+        fi
 
-      - run: |
-          ls -al dist/
+    - name: Merge and tag the PR
+      uses: edgedb/action-release/merge@master
+      with:
+        github_token: ${{ secrets.MY_GITHUB_TOKEN }}
+        ssh_key: ${{ secrets.RELEASE_BOT_SSH_KEY }}
+        gpg_key: ${{ secrets.RELEASE_BOT_GPG_KEY }}
+        gpg_key_id: "5C468778062D87BF!"
+        tag_name: v${{ steps.relver.outputs.version }}
 
-      - name: Upload to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          attestations: true
+    - name: Publish Github Release
+      uses: elprans/gh-action-create-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.relver.outputs.version }}
+        release_name: v${{ steps.relver.outputs.version }}
+        target: ${{ github.ref }}  
+        body: "Release v${{ steps.relver.outputs.version }}"
+
+    - run: |
+        ls -al dist/  
+
+    - name: Upload to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        attestations: true
