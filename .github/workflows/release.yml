@@ -79,11 +79,11 @@ jobs:
       with:
         fetch-depth: 50
         submodules: true
-        
+
     - name: Set up QEMU
       if: runner.os == 'Linux'
       uses: docker/setup-qemu-action@v2
-    
+
     - uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b 
       with:
         only: ${{ matrix.only }}
@@ -93,7 +93,7 @@ jobs:
     - name: Upload wheel artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: dist-wheels-${{ matrix.only }}
+        name: dist-wheels-${{ matrix.only }}  # 确保命名一致
         path: wheelhouse/*.whl
 
   merge-artifacts:
@@ -104,21 +104,24 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-sdist
-          path: dist-sdist/  # 确保存放路径正确
+          path: dist-sdist/  # 下载源分发工件
+
+      - name: Verify Source Artifact Download
+        run: |
+          echo "Listing Source Distribution Files:"
+          ls -al dist-sdist/
 
       - name: Download Wheel Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist-wheels-${{ matrix.only }}
-          path: dist-wheels/  # 确保存放路径正确
+          name: dist-wheels-${{ matrix.only }}  # 下载与矩阵变量一致的轮子工件
+          path: dist-wheels/  # 下载轮子工件的正确路径
 
-      - name: Verify Artifacts Downloaded
+      - name: Verify Wheel Artifact Download
         run: |
-          echo "Listing Source Distribution Files:"
-          ls -al dist-sdist/
           echo "Listing Wheel Files:"
           ls -al dist-wheels/
-      
+
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
@@ -184,7 +187,7 @@ jobs:
         body: "Release v${{ steps.relver.outputs.version }}"
 
     - run: |
-        ls -al dist/  
+        ls -al dist/
 
     - name: Upload to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
