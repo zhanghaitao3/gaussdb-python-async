@@ -122,10 +122,10 @@ jobs:
         name: dist-sdist
         path: dist/
 
-    - name: Download wheel artifacts
+    - name: Download all wheel artifacts
       uses: actions/download-artifact@v4
       with:
-        name: dist-wheels-${{ matrix.only }}
+        pattern: dist-wheels-*
         path: dist/
 
     - name: Extract Release Version
