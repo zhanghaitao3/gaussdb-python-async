@@ -1,12 +1,6 @@
 async_gaussdb -- A fast GaussDB/openGauss Database Client Library for Python/asyncio
 =====================================================================================
 
-.. image:: https://github.com/MagicStack/async_gaussdb/workflows/Tests/badge.svg
-   :target: https://github.com/MagicStack/async_gaussdb/actions?query=workflow%3ATests+branch%3Amaster
-   :alt: GitHub Actions status
-.. image:: https://img.shields.io/pypi/v/async_gaussdb.svg
-   :target: https://pypi.python.org/pypi/async_gaussdb
-
 **async_gaussdb** is a database interface library designed specifically for
 GaussDB and openGauss databases with Python/asyncio. This fork of async_gaussdb is
 optimized for GaussDB/openGauss compatibility, including native SHA256
@@ -86,7 +80,7 @@ Basic Usage
 
 
 GaussDB/openGauss Specific Features
-----------------------------------
+-----------------------------------
 
 This library includes enhanced support for GaussDB and openGauss databases:
 
