@@ -3,7 +3,7 @@ name = "async_gaussdb"
 description = "An asyncio GaussDB driver"
 requires-python = '>=3.8.0'
 readme = "README.rst"
-license = {text = "Apache License, Version 2.0"}
+license = {text = "Apache-2.0"}
 dynamic = ["version"]
 keywords = [
     "database",

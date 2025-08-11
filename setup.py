@@ -249,10 +249,5 @@ setuptools.setup(
             extra_link_args=LDFLAGS),
     ],
     cmdclass={'build_ext': build_ext, 'build_py': build_py, 'sdist': sdist},
-    setup_requires=setup_requires,
-    
-    license='Apache 2.0',  
-    license_files=('LICENSE',),  
-    long_description=readme, 
-    long_description_content_type='text/x-rst',  
+    setup_requires=setup_requires
 )
