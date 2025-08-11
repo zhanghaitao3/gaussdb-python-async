@@ -31,7 +31,7 @@ jobs:
         pip install -U setuptools wheel pip
         python setup.py sdist
 
-    - name: Upload source distribution artifact
+    - name: Upload sdist artifact
       uses: actions/upload-artifact@v4
       with:
         name: dist-sdist  
@@ -97,16 +97,6 @@ jobs:
         name: dist-wheels-${{ matrix.only }}
         path: wheelhouse/*.whl
 
-  merge-artifacts:
-    runs-on: ubuntu-latest
-    needs: [build-sdist, build-wheels]
-    steps:
-      - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
-        with:
-          name: dist
-          delete-merged: true
-
   publish:
     needs: [build-sdist, build-wheels]
     runs-on: ubuntu-latest
@@ -126,10 +116,16 @@ jobs:
         fetch-depth: 5
         submodules: false
 
-    - name: Download merged artifacts
+    - name: Download sdist artifact
       uses: actions/download-artifact@v4
       with:
-        name: dist  
+        name: dist-sdist
+        path: dist/
+
+    - name: Download wheel artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-wheels-${{ matrix.only }}
         path: dist/
 
     - name: Extract Release Version
