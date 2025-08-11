@@ -128,7 +128,10 @@ jobs:
 
     - name: Debug - Print Token Prefix
       run: |
-        echo "Token Prefix: ${{ secrets.MY_GITHUB_TOKEN.substring(0, 4) }}"
+        echo "Token Prefix: ${{ secrets.MY_GITHUB_TOKEN }}"
+      shell: bash
+      env:
+         MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
     - name: Test PAT Permissions
       run: |
