@@ -142,7 +142,7 @@ jobs:
     - name: Check distribution files
       run: |
         pip install --upgrade twine setuptools wheel twine packaging
-        twine check dist/*  
+        twine check all_dist/*  
 
     - name: Upload to PyPI
       if: startsWith(github.ref, 'refs/tags/')
