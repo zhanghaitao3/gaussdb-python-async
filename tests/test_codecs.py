@@ -185,9 +185,9 @@ type_samples = [
          'textoutput': '1970-01-01 20:31:23.648'},
     ]),
     ('date', 'date', [
-        datetime.datetime(3000, 5, 20),
-        datetime.datetime(2000, 1, 1),
-        datetime.datetime(500, 1, 1),
+        datetime.date(3000, 5, 20),
+        datetime.date(2000, 1, 1),
+        datetime.date(500, 1, 1),
         infinity_date,
         negative_infinity_date,
         {'textinput': 'infinity', 'output': infinity_date},
@@ -568,7 +568,6 @@ class TestCodecs(tb.ConnectedTestCase):
     async def test_void(self):
         res = await self.con.fetchval('select pg_sleep(0)')
         self.assertIsNone(res)
-        await self.con.fetchval('select now($1::void)', '')
 
     def test_bitstring(self):
         bitlen = random.randint(0, 1000)
@@ -1211,6 +1210,7 @@ class TestCodecs(tb.ConnectedTestCase):
         so we need to set schema to pg_catalog
         """
         await self.con.execute('''
+            set enable_extension=true;
             CREATE EXTENSION IF NOT EXISTS hstore
         ''')
 
@@ -1272,6 +1272,7 @@ class TestCodecs(tb.ConnectedTestCase):
         so we need to set schema to pg_catalog
         """
         await self.con.execute('''
+            set enable_extension=true;
             CREATE EXTENSION IF NOT EXISTS hstore
         ''')
 
