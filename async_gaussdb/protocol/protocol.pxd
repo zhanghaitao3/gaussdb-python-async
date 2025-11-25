@@ -51,6 +51,8 @@ cdef class BaseProtocol(CoreProtocol):
 
         bint _is_ssl
 
+        object _pending_result
+
         PreparedStatementState statement
 
     cdef get_connection(self)
