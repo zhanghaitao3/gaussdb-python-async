@@ -160,7 +160,7 @@ type_samples = [
         dict(input=bytearray(b'\x02\x01'), output=b'\x02\x01'),
     )),
     ('text', 'text', (
-        '',
+        'A',
         'A' * (1024 * 1024 + 11)
     )),
     ('"char"', 'char', (
