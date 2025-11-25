@@ -1204,6 +1204,7 @@ class TestCodecs(tb.ConnectedTestCase):
                 DROP DOMAIN my_dec_t;
             ''')
 
+    @unittest.skip('GaussDB enable_extension!=true')
     async def test_custom_codec_text(self):
         """Test encoding/decoding using a custom codec in text mode.
         GaussDB hstore extension is in pg_catalog schema,
@@ -1266,6 +1267,7 @@ class TestCodecs(tb.ConnectedTestCase):
             # ''')
             pass
 
+    @unittest.skip('GaussDB enable_extension!=true')
     async def test_custom_codec_binary(self):
         """Test encoding/decoding using a custom codec in binary mode.
         GaussDB hstore extension is in pg_catalog schema,
