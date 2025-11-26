@@ -34,7 +34,7 @@ exposes its features directly, optimized for enterprise database environments:
 * **openGauss compatibility** - Comprehensive test suite and error handling
 * **Enterprise features** - Optimized for production GaussDB environments
 
-
+ 
 Installation
 ------------
 
