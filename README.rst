@@ -76,7 +76,7 @@ Basic Usage
     asyncio.run(run())
 
 
-GaussDB/openGauss Specific Features
+GaussDB/openGauss Specific Features 
 -----------------------------------
 
 This library includes enhanced support for GaussDB and openGauss databases:
