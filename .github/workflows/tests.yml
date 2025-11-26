@@ -74,6 +74,10 @@ jobs:
         [ "$RUNNER_OS" = "Linux" ] && .github/workflows/install-krb5.sh
         python -m pip install -U pip setuptools wheel
         python -m pip install -e .[test]
+        # 添加 uvloop 安装
+        if [ "${{ matrix.loop }}" = "uvloop" ]; then
+          python -m pip install uvloop
+        fi
     
     - name: Wait for openGauss to be ready
       env:

@@ -102,6 +102,8 @@ cdef class BaseProtocol(CoreProtocol):
 
         self._is_ssl = False
 
+        self._pending_result = None
+
         try:
             self.create_future = loop.create_future
         except AttributeError:
@@ -414,7 +416,10 @@ cdef class BaseProtocol(CoreProtocol):
                         self._request_cancel()
                         # Make asyncio shut up about unretrieved
                         # QueryCanceledError
-                        waiter.add_done_callback(lambda f: f.exception())
+                        if waiter and not waiter.done():
+                            waiter.cancel()
+                        elif waiter and waiter.done() and not waiter.cancelled():
+                            waiter.exception()
                         raise
 
                 # done will be True upon receipt of CopyDone.
@@ -424,6 +429,7 @@ cdef class BaseProtocol(CoreProtocol):
                 waiter = self._new_waiter(timer.get_remaining_budget())
 
         finally:
+            self._pending_result = None
             self.resume_reading()
 
         return status_msg
@@ -776,6 +782,14 @@ cdef class BaseProtocol(CoreProtocol):
             self.abort()
 
     cdef _new_waiter(self, timeout):
+        if self._pending_result is not None:
+            res = self._pending_result
+            self._pending_result = None
+            self.resume_reading()
+            waiter = self.loop.create_future()
+            waiter.set_result(res)
+            return waiter
+
         if self.waiter is not None:
             raise apg_exc.InterfaceError(
                 'cannot perform operation: another operation is in progress')
@@ -848,10 +862,31 @@ cdef class BaseProtocol(CoreProtocol):
         waiter = self.waiter
         self.waiter = None
 
-        if PG_DEBUG:
-            if waiter is None:
+        if waiter is None:
+            if PG_DEBUG:
                 raise apg_exc.InternalClientError('_on_result: waiter is None')
+            
+            if self.state == PROTOCOL_COPY_OUT_DATA or \
+               self.state == PROTOCOL_COPY_OUT_DONE:
+                
+                copy_done = self.state == PROTOCOL_COPY_OUT_DONE
+                if copy_done:
+                    status_msg = self.result_status_msg.decode(self.encoding)
+                else:
+                    status_msg = None
 
+                self.pause_reading()
+                if self._pending_result is not None:
+                    old_data, old_done, old_status = self._pending_result
+                    current_data = self.result if self.result is not None else b''
+                    merged_data = (old_data if old_data is not None else b'') + current_data
+                    self._pending_result = (merged_data, copy_done, status_msg)
+                else:
+                    self._pending_result = (self.result, copy_done, status_msg)
+
+                return
+            else:
+                return
         if waiter.cancelled():
             return
 

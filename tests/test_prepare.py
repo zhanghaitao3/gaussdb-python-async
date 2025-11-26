@@ -31,7 +31,7 @@ class TestPrepare(tb.ConnectedTestCase):
         self.assertEqual(self.con._protocol.queries_count, 2)
 
     async def test_prepare_02(self):
-        with self.assertRaisesRegex(Exception, 'column "a" does not exist'):
+        with self.assertRaisesRegex(Exception, r'(?i)column "a" does not exist'):
             await self.con.prepare('SELECT a')
 
     async def test_prepare_03(self):

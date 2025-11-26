@@ -249,5 +249,5 @@ setuptools.setup(
             extra_link_args=LDFLAGS),
     ],
     cmdclass={'build_ext': build_ext, 'build_py': build_py, 'sdist': sdist},
-    setup_requires=setup_requires,
+    setup_requires=setup_requires
 )

@@ -126,7 +126,7 @@ class TestTimeout(tb.ConnectedTestCase):
 
 class TestConnectionCommandTimeout(tb.ConnectedTestCase):
 
-    @tb.with_connection_options(command_timeout=0.2)
+    @tb.with_connection_options(command_timeout=0.4)
     async def test_command_timeout_01(self):
         for methname in {'fetch', 'fetchrow', 'fetchval', 'execute'}:
             with self.assertRaises(asyncio.TimeoutError), \

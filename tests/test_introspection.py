@@ -64,6 +64,7 @@ class TestIntrospection(tb.ConnectedTestCase):
         )
 
     @tb.with_connection_options(database='async_gaussdb_intro_test')
+    @unittest.skip('CREATE TABLE INHERITS is not yet supported.')
     async def test_introspection_on_large_db(self):
         await self.con.execute(
             'CREATE TABLE base ({})'.format(

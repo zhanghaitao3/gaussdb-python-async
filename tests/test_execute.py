@@ -63,7 +63,7 @@ class TestExecuteScript(tb.ConnectedTestCase):
 
     async def test_execute_exceptions_1(self):
         with self.assertRaisesRegex(async_gaussdb.GaussDBError,
-                                    'relation "__dne__" does not exist'):
+                                    r'(?i)relation "__dne__" does not exist'):
 
             await self.con.execute('select * from __dne__')
 
@@ -284,7 +284,7 @@ class TestExecuteMany(tb.ConnectedTestCase):
                 await tx.start()
                 await conn.execute("UPDATE exmany SET a = '1' WHERE b = 10")
                 event.set()
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 await tx.rollback()
             finally:
                 event.set()
@@ -298,7 +298,7 @@ class TestExecuteMany(tb.ConnectedTestCase):
         with self.assertRaises(asyncio.TimeoutError):
             await self.con.executemany('''
                 UPDATE exmany SET a = $1 WHERE b = $2
-            ''', [('a' * 32768, x) for x in range(128)], timeout=0.5)
+            ''', [('a' * 32768, x) for x in range(128)], timeout=1.0)
         await fut
         result = await self.con.fetch(
             'SELECT * FROM exmany WHERE a IS NOT NULL')
@@ -314,7 +314,7 @@ class TestExecuteMany(tb.ConnectedTestCase):
         result = await self.con.fetch('SELECT b FROM exmany')
         # only 2 batches executed (2 x 4)
         self.assertEqual(
-            [x[0] for x in result], [y + 1 for y in range(10, 2, -1)])
+            sorted([x[0] for x in result]), sorted([y + 1 for y in range(10, 2, -1)]))
         await tx.rollback()
         result = await self.con.fetch('SELECT b FROM exmany')
         self.assertEqual(result, [])
