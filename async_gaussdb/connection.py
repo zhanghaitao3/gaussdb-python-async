@@ -2647,8 +2647,6 @@ ServerCapabilities.__doc__ = 'GaussDBSQL server capabilities.'
 
 
 def _detect_server_capabilities(server_version, connection_settings):
-    print(connection_settings)
-    print(server_version)
     if hasattr(connection_settings, 'padb_revision'):
         # Amazon Redshift detected.
         advisory_locks = False
