@@ -4,7 +4,7 @@ set -Eexuo pipefail
 shopt -s nullglob
 
 if [[ $OSTYPE == linux* ]]; then
-    PGVERSION=${PGVERSION:-12}
+    GAUSSDBVERSION=${PGVERSION:-12}
 
     if [ -e /etc/os-release ]; then
         source /etc/os-release
