@@ -8,7 +8,7 @@
 from libc.stdint cimport int16_t, int32_t, uint16_t, \
                          uint32_t, int64_t, uint64_t
 
-from async_gaussdb.pgproto.debug cimport PG_DEBUG
+from async_gaussdb.pgproto.debug cimport GAUSSDB_DEBUG
 
 from async_gaussdb.pgproto.pgproto cimport (
     WriteBuffer,

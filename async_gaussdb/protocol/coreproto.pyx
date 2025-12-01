@@ -513,7 +513,7 @@ cdef class CoreProtocol:
             object row
             bytes mem
 
-        if PG_DEBUG:
+        if GAUSSDB_DEBUG:
             if buf.get_message_type() != b'D':
                 raise apg_exc.InternalClientError(
                     '_parse_data_msgs: first message is not "D"')
@@ -523,7 +523,7 @@ cdef class CoreProtocol:
                 buf.discard_message()
             return
 
-        if PG_DEBUG:
+        if GAUSSDB_DEBUG:
             if type(self.result) is not list:
                 raise apg_exc.InternalClientError(
                     '_parse_data_msgs: result is not a list, but {!r}'.

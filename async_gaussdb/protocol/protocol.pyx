@@ -804,7 +804,7 @@ cdef class BaseProtocol(CoreProtocol):
         waiter.set_result(True)
 
     cdef _on_result__prepare(self, object waiter):
-        if PG_DEBUG:
+        if GAUSSDB_DEBUG:
             if self.statement is None:
                 raise apg_exc.InternalClientError(
                     '_on_result__prepare: statement is None')
@@ -851,7 +851,7 @@ cdef class BaseProtocol(CoreProtocol):
         waiter.set_result(status_msg)
 
     cdef _decode_row(self, const char* buf, ssize_t buf_len):
-        if PG_DEBUG:
+        if GAUSSDB_DEBUG:
             if self.statement is None:
                 raise apg_exc.InternalClientError(
                     '_decode_row: statement is None')
@@ -863,7 +863,7 @@ cdef class BaseProtocol(CoreProtocol):
         self.waiter = None
 
         if waiter is None:
-            if PG_DEBUG:
+            if GAUSSDB_DEBUG:
                 raise apg_exc.InternalClientError('_on_result: waiter is None')
             
             if self.state == PROTOCOL_COPY_OUT_DATA or \

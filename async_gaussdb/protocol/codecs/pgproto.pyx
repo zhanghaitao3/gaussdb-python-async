@@ -385,7 +385,7 @@ cdef init_txid_codecs():
                         <decode_func>pgproto.text_decode,
                         PG_FORMAT_TEXT)
 
-    register_core_codec(PG_SNAPSHOTOID,
+    register_core_codec(pg_snapshotOID,
                         <encode_func>pgproto.pg_snapshot_encode,
                         <decode_func>pgproto.pg_snapshot_decode,
                         PG_FORMAT_BINARY)
