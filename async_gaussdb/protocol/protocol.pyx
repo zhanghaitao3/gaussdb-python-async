@@ -18,7 +18,7 @@ import socket
 import time
 import weakref
 
-from async_gaussdb.pgproto.pgproto cimport (
+from async_gaussdb.gaussdbproto.gaussdbproto cimport (
     WriteBuffer,
     ReadBuffer,
 
@@ -32,7 +32,7 @@ from async_gaussdb.pgproto.pgproto cimport (
     frb_get_len,
 )
 
-from async_gaussdb.pgproto cimport pgproto
+from async_gaussdb.gaussdbproto cimport gaussdbproto
 from async_gaussdb.protocol cimport cpythonx
 from async_gaussdb.protocol cimport record
 
@@ -45,11 +45,11 @@ from async_gaussdb import compat
 from async_gaussdb import types as apg_types
 from async_gaussdb import exceptions as apg_exc
 
-from async_gaussdb.pgproto cimport hton
+from async_gaussdb.gaussdbproto cimport hton
 
 
 include "consts.pxi"
-include "pgtypes.pxi"
+include "gaussdbtypes.pxi"
 
 include "encodings.pyx"
 include "settings.pyx"
@@ -57,8 +57,8 @@ include "settings.pyx"
 include "codecs/base.pyx"
 include "codecs/textutils.pyx"
 
-# register codecs provided by pgproto
-include "codecs/pgproto.pyx"
+# register codecs provided by gaussdbproto
+include "codecs/gaussdbproto.pyx"
 
 # nonscalar
 include "codecs/array.pyx"
@@ -476,7 +476,7 @@ cdef class BaseProtocol(CoreProtocol):
 
                 for codec in codecs:
                     if (not codec.has_encoder() or
-                            codec.format != PG_FORMAT_BINARY):
+                            codec.format != GAUSSDB_FORMAT_BINARY):
                         raise apg_exc.InternalClientError(
                             'no binary format encoder for '
                             'type {} (OID {})'.format(codec.name, codec.oid))

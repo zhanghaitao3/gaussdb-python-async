@@ -467,8 +467,8 @@ cdef _textarray_decode(ConnectionSettings settings,
         object item
         str item_text
         FRBuffer item_buf
-        char *pg_item_str
-        ssize_t pg_item_len
+        char *gaussdb_item_str
+        ssize_t gaussdb_item_len
 
     ptr = array_text
 
@@ -648,9 +648,9 @@ cdef _textarray_decode(ConnectionSettings settings,
 
             # Prepare the element buffer and call the text decoder
             # for the element type.
-            pgproto.as_pg_string_and_size(
-                settings, item_text, &pg_item_str, &pg_item_len)
-            frb_init(&item_buf, pg_item_str, pg_item_len)
+            gaussdbproto.as_gaussdb_string_and_size(
+                settings, item_text, &gaussdb_item_str, &gaussdb_item_len)
+            frb_init(&item_buf, gaussdb_item_str, gaussdb_item_len)
             item = decoder(settings, &item_buf, decoder_arg)
 
         # Place the decoded element in the array.
@@ -865,11 +865,11 @@ cdef init_array_codecs():
     register_core_codec(_OIDOID,
                         <encode_func>&arrayoid_encode,
                         <decode_func>&arrayoid_decode,
-                        PG_FORMAT_BINARY)
+                        GAUSSDB_FORMAT_BINARY)
 
     register_core_codec(_TEXTOID,
                         <encode_func>&arraytext_encode,
                         <decode_func>&arraytext_decode,
-                        PG_FORMAT_BINARY)
+                        GAUSSDB_FORMAT_BINARY)
 
 init_array_codecs()
