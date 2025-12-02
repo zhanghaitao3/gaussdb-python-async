@@ -419,7 +419,7 @@ cdef textarray_decode(ConnectionSettings settings, FRBuffer *buf,
 
     # Make a copy of array data since we will be mutating it for
     # the purposes of element decoding.
-    s = pgproto.text_decode(settings, buf)
+    s = gaussdbproto.text_decode(settings, buf)
     array_text = cpythonx.PyUnicode_AsUCS4Copy(s)
 
     try:
@@ -822,12 +822,12 @@ cdef _infer_array_dims(const Py_UCS4 *array_text,
 
 cdef uint4_encode_ex(ConnectionSettings settings, WriteBuffer buf, object obj,
                      const void *arg):
-    return pgproto.uint4_encode(settings, buf, obj)
+    return gaussdbproto.uint4_encode(settings, buf, obj)
 
 
 cdef uint4_decode_ex(ConnectionSettings settings, FRBuffer *buf,
                      const void *arg):
-    return pgproto.uint4_decode(settings, buf)
+    return gaussdbproto.uint4_decode(settings, buf)
 
 
 cdef arrayoid_encode(ConnectionSettings settings, WriteBuffer buf, items):
@@ -841,12 +841,12 @@ cdef arrayoid_decode(ConnectionSettings settings, FRBuffer *buf):
 
 cdef text_encode_ex(ConnectionSettings settings, WriteBuffer buf, object obj,
                     const void *arg):
-    return pgproto.text_encode(settings, buf, obj)
+    return gaussdbproto.text_encode(settings, buf, obj)
 
 
 cdef text_decode_ex(ConnectionSettings settings, FRBuffer *buf,
                     const void *arg):
-    return pgproto.text_decode(settings, buf)
+    return gaussdbproto.text_decode(settings, buf)
 
 
 cdef arraytext_encode(ConnectionSettings settings, WriteBuffer buf, items):
